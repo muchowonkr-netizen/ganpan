@@ -37,9 +37,8 @@ export default function SignViewer({ signs, startIndex, onClose }: {
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center px-4 py-3">
         <button onClick={onClose} className="text-zinc-400 text-xl px-1">✕</button>
-        <span className="text-xs text-zinc-500">{index + 1} / {signs.length}</span>
       </div>
 
       <div className="flex-1 flex flex-col items-center px-4 gap-4 overflow-hidden">

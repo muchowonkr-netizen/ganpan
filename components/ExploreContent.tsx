@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import type { Sign } from '@/types'
 import CommentSheet from './CommentSheet'
 import SignViewer from './SignViewer'
+import Link from 'next/link'
 
 function weightedShuffle(signs: Sign[]): Sign[] {
   // 인기순 가중치: 상위권일수록 앞에 나올 확률이 높지만 완전 고정은 아님
@@ -18,8 +19,6 @@ export default function ExploreContent() {
   const [commentSign, setCommentSign] = useState<string | null>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
 
-  useEffect(() => { load() }, [])
-
   async function load() {
     setLoading(true)
     const { data } = await supabase
@@ -32,6 +31,9 @@ export default function ExploreContent() {
     setLoading(false)
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void load() }, [])
+
   const shuffle = useCallback(() => {
     setDisplayed(weightedShuffle(pool))
   }, [pool])
@@ -39,14 +41,22 @@ export default function ExploreContent() {
   return (
     <div className="pt-4">
       <div className="px-4 mb-3 flex items-center justify-between">
-        <h1 className="text-xl font-black text-yellow-400">🔥 인기 간판</h1>
-        <button
-          onClick={shuffle}
-          disabled={loading}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-zinc-800 text-zinc-300 text-sm font-bold active:scale-95 transition-transform disabled:opacity-40"
-        >
-          🔀 섞기
-        </button>
+        <h1 className="text-xl font-black text-yellow-400">🔥 인기간판</h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={shuffle}
+            disabled={loading}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-zinc-800 text-zinc-300 text-sm font-bold active:scale-95 transition-transform disabled:opacity-40"
+          >
+            🔀 섞기
+          </button>
+          <Link
+            href="/"
+            className="px-3 py-1.5 rounded-full bg-zinc-800 text-zinc-200 text-sm font-bold active:scale-95 transition-transform"
+          >
+            간판여행
+          </Link>
+        </div>
       </div>
 
       <div className="px-4">
