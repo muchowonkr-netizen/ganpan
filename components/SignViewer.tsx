@@ -18,6 +18,11 @@ export default function SignViewer({ signs, startIndex, onClose }: {
   const current = signs[index]
 
   useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  useEffect(() => {
     if (!current) return
     setPreviewComment(null)
     void supabase
