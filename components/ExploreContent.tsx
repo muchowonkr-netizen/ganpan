@@ -1,92 +1,130 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Sign } from '@/types'
 import CommentSheet from './CommentSheet'
 import SignViewer from './SignViewer'
 import Link from 'next/link'
 
-function weightedShuffle(signs: Sign[]): Sign[] {
-  // 인기순 가중치: 상위권일수록 앞에 나올 확률이 높지만 완전 고정은 아님
-  return [...signs].sort(() => Math.random() - 0.45)
-}
+const PAGE_SIZE = 20
 
 export default function ExploreContent() {
-  const [pool, setPool] = useState<Sign[]>([])
-  const [displayed, setDisplayed] = useState<Sign[]>([])
+  const [signs, setSigns] = useState<Sign[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const [commentSign, setCommentSign] = useState<string | null>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  const pageRef = useRef(0)
 
-  async function load() {
-    setLoading(true)
+  const loadMore = useCallback(async (reset = false) => {
+    if (!reset && (loading || loadingMore || !hasMore)) return
+    if (reset) {
+      setLoading(true)
+      setHasMore(true)
+      pageRef.current = 0
+    } else {
+      setLoadingMore(true)
+    }
+
+    const pageToLoad = reset ? 0 : pageRef.current
+    const from = pageToLoad * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
     const { data } = await supabase
       .from('signs').select('*')
       .order('like_count', { ascending: false })
-      .limit(120)
+      .range(from, to)
+
     const fetched = data ?? []
-    setPool(fetched)
-    setDisplayed(weightedShuffle(fetched))
+    setSigns(prev => {
+      if (reset) return fetched
+      const seen = new Set(prev.map(sign => sign.id))
+      const merged = [...prev]
+      for (const sign of fetched) {
+        if (!seen.has(sign.id)) merged.push(sign)
+      }
+      return merged
+    })
+
+    if (fetched.length < PAGE_SIZE) setHasMore(false)
+    pageRef.current = pageToLoad + 1
     setLoading(false)
-  }
+    setLoadingMore(false)
+  }, [hasMore, loading, loadingMore])
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void load() }, [])
+  // eslint-disable-next-line react-hooks/set-state-in-effect,react-hooks/exhaustive-deps
+  useEffect(() => { void loadMore(true) }, [])
 
-  const shuffle = useCallback(() => {
-    setDisplayed(weightedShuffle(pool))
-  }, [pool])
+  useEffect(() => {
+    if (!sentinelRef.current || loading) return
+
+    const observer = new IntersectionObserver((entries) => {
+      const [entry] = entries
+      if (entry.isIntersecting) {
+        void loadMore()
+      }
+    }, { rootMargin: '200px 0px' })
+
+    observer.observe(sentinelRef.current)
+    return () => observer.disconnect()
+  }, [loadMore, loading])
 
   return (
     <div className="pt-4">
       <div className="px-4 mb-3 flex items-center justify-between">
         <h1 className="text-xl font-black text-yellow-400">🔥 인기간판</h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={shuffle}
-            disabled={loading}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-zinc-800 text-zinc-300 text-sm font-bold active:scale-95 transition-transform disabled:opacity-40"
-          >
-            🔀 섞기
-          </button>
-          <Link
-            href="/"
-            className="px-3 py-1.5 rounded-full bg-zinc-800 text-zinc-200 text-sm font-bold active:scale-95 transition-transform"
-          >
-            간판여행
-          </Link>
-        </div>
+        <Link
+          href="/"
+          className="w-9 h-9 rounded-full bg-zinc-800 text-zinc-200 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
+          aria-label="간판여행"
+        >
+          🌏
+        </Link>
       </div>
 
       <div className="px-4">
         {loading ? (
           <div className="flex items-center justify-center py-20 text-3xl animate-pulse">🔥</div>
-        ) : displayed.length === 0 ? (
+        ) : signs.length === 0 ? (
           <div className="flex flex-col items-center py-16 gap-3 text-zinc-600">
             <span className="text-4xl">🪧</span>
             <p className="text-sm">간판이 없어요</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
-            {displayed.map((sign, i) => (
-              <SignTile key={sign.id} sign={sign} onComment={setCommentSign} onOpen={() => setViewerIndex(i)} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-3 auto-rows-[80px] gap-2">
+              {signs.map((sign, i) => (
+                <SignTile key={sign.id} sign={sign} index={i} onComment={setCommentSign} onOpen={() => setViewerIndex(i)} />
+              ))}
+            </div>
+            <div ref={sentinelRef} className="h-12 flex items-center justify-center">
+              {loadingMore && <span className="text-sm text-zinc-400">더 불러오는 중...</span>}
+              {!hasMore && <span className="text-xs text-zinc-600">마지막 간판까지 모두 확인했어요...</span>}
+            </div>
+          </>
         )}
       </div>
 
       {commentSign && <CommentSheet signId={commentSign} onClose={() => setCommentSign(null)} />}
       {viewerIndex !== null && (
-        <SignViewer signs={displayed} startIndex={viewerIndex} onClose={() => setViewerIndex(null)} />
+        <SignViewer signs={signs} startIndex={viewerIndex} onClose={() => setViewerIndex(null)} />
       )}
     </div>
   )
 }
 
-function SignTile({ sign, onComment, onOpen }: { sign: Sign; onComment: (id: string) => void; onOpen: () => void }) {
+function SignTile({ sign, index, onComment, onOpen }: { sign: Sign; index: number; onComment: (id: string) => void; onOpen: () => void }) {
+  const pattern = index % 12
+  const layoutClass = pattern === 0 || pattern === 7
+    ? 'col-span-2 row-span-2'
+    : pattern === 3 || pattern === 10
+      ? 'col-span-1 row-span-2'
+      : 'col-span-1 row-span-1'
+
   return (
-    <div className="relative rounded-2xl overflow-hidden aspect-square bg-zinc-900 cursor-pointer" onClick={onOpen}>
+    <div className={`relative rounded-2xl overflow-hidden bg-zinc-900 cursor-pointer ${layoutClass}`} onClick={onOpen}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-full object-cover" />
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">

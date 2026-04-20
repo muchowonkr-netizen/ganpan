@@ -69,37 +69,39 @@ export default function SwipeFeed() {
   }
 
   return (
-    <div className="flex flex-col items-center min-h-dvh pt-4 px-4 gap-4">
-      <header className="w-full flex items-center justify-between py-2">
-        <h1 className="text-xl font-black text-yellow-400">🪧 간판을 좋아하세요...</h1>
+    <div className="flex flex-col min-h-dvh">
+      <header className="w-full flex items-center justify-between px-4 py-3">
+        <h1 className="text-xl font-black text-white">간판을 좋아하세요...</h1>
         <Link
           href="/explore"
-          className="px-3 py-1.5 rounded-full bg-zinc-800 text-zinc-200 text-sm font-bold active:scale-95 transition-transform"
+          className="w-9 h-9 rounded-full bg-zinc-800 text-zinc-200 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
+          aria-label="인기간판"
         >
-          인기간판
+          🔍
         </Link>
       </header>
 
-      <SwipeCard
-        key={current.id}
-        sign={current}
-        onSwipeLeft={() => recordAction('dislike')}
-        onSwipeRight={() => recordAction('like')}
-      />
-
-      <div className="flex items-center gap-6 py-2">
-        <ActionButton emoji="✕" color="text-red-400 border-red-400" onClick={() => recordAction('dislike')} />
-        <ActionButton
-          emoji="⭐"
-          color="text-blue-400 border-blue-400"
-          onClick={() => {
-            setSuperLikedId(current.id)
-            recordAction('super_like')
-            setShowComment(true)
-          }}
-          big
+      <div className="relative flex-1 min-h-0">
+        <SwipeCard
+          key={current.id}
+          sign={current}
+          onSwipeLeft={() => recordAction('dislike')}
+          onSwipeRight={() => recordAction('like')}
         />
-        <ActionButton emoji="♥" color="text-green-400 border-green-400" onClick={() => recordAction('like')} />
+
+        <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-5">
+          <ActionButton emoji="✕" color="text-red-400 border-red-400 bg-black/45 backdrop-blur-sm" onClick={() => recordAction('dislike')} />
+          <ActionButton
+            emoji="⭐"
+            color="text-blue-400 border-blue-400 bg-black/45 backdrop-blur-sm"
+            onClick={() => {
+              setSuperLikedId(current.id)
+              recordAction('super_like')
+              setShowComment(true)
+            }}
+          />
+          <ActionButton emoji="♥" color="text-green-400 border-green-400 bg-black/45 backdrop-blur-sm" onClick={() => recordAction('like')} />
+        </div>
       </div>
 
 
@@ -132,10 +134,10 @@ function SwipeCard({ sign, onSwipeLeft, onSwipeRight }: { sign: Sign; onSwipeLef
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
-      className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing select-none"
+      className="relative h-full w-full overflow-hidden bg-black cursor-grab active:cursor-grabbing select-none"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={sign.image_url} alt={sign.caption ?? '간판'} className="w-full h-full object-cover" draggable={false} />
+      <img src={sign.image_url} alt={sign.caption ?? '간판'} className="w-full h-full object-contain" draggable={false} />
 
       <motion.div style={{ opacity: likeOpacity }} className="absolute top-8 left-6 rotate-[-20deg] border-4 border-green-400 text-green-400 font-black text-2xl px-3 py-1 rounded-xl">
         LIKE
@@ -144,7 +146,7 @@ function SwipeCard({ sign, onSwipeLeft, onSwipeRight }: { sign: Sign; onSwipeLef
         NOPE
       </motion.div>
 
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-5">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-5 pb-24">
         {sign.caption && <p className="font-bold text-lg leading-snug">{sign.caption}</p>}
         {sign.location_name && <p className="text-sm text-zinc-300 mt-1">📍 {sign.location_name}</p>}
         <div className="flex gap-3 mt-2 text-xs text-zinc-400">
@@ -157,11 +159,11 @@ function SwipeCard({ sign, onSwipeLeft, onSwipeRight }: { sign: Sign; onSwipeLef
   )
 }
 
-function ActionButton({ emoji, color, onClick, big }: { emoji: string; color: string; onClick: () => void; big?: boolean }) {
+function ActionButton({ emoji, color, onClick }: { emoji: string; color: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className={`${big ? 'w-16 h-16 text-2xl' : 'w-12 h-12 text-xl'} rounded-full border-2 ${color} flex items-center justify-center font-bold transition-transform active:scale-90`}
+      className={`w-14 h-14 text-2xl rounded-full border-2 ${color} flex items-center justify-center font-bold transition-transform active:scale-90`}
     >
       {emoji}
     </button>
