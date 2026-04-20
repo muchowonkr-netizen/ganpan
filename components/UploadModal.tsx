@@ -7,7 +7,6 @@ export default function UploadModal({ onClose }: { onClose: () => void }) {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [caption, setCaption] = useState('')
-  const [location, setLocation] = useState('')
   const [uploading, setUploading] = useState(false)
   const [done, setDone] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -38,7 +37,6 @@ export default function UploadModal({ onClose }: { onClose: () => void }) {
     await supabase.from('signs').insert({
       image_url: publicUrl,
       caption: caption.trim() || null,
-      location_name: location.trim() || null,
     })
 
     setDone(true)
@@ -86,19 +84,10 @@ export default function UploadModal({ onClose }: { onClose: () => void }) {
 
             <input
               type="text"
-              placeholder="간판 내용 (선택)"
+              placeholder="한줄평 (선택)"
               value={caption}
               onChange={e => setCaption(e.target.value)}
               maxLength={100}
-              className="w-full px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm"
-            />
-
-            <input
-              type="text"
-              placeholder="위치 (선택, 예: 서울 홍대)"
-              value={location}
-              onChange={e => setLocation(e.target.value)}
-              maxLength={50}
               className="w-full px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm"
             />
 
