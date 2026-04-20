@@ -82,8 +82,8 @@ export default function SwipeFeed() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh">
-      <header className="w-full flex items-center justify-between px-4 py-3">
+    <div className="flex flex-col h-dvh">
+      <header className="w-full flex items-center justify-between px-4 py-3 flex-shrink-0">
         <h1 className="text-xl font-black text-white">간판을 좋아하세요...</h1>
         <Link
           href="/"
