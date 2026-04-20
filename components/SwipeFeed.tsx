@@ -35,17 +35,28 @@ export default function SwipeFeed() {
 
   const current = signs[index]
 
-  async function recordAction(action: 'like' | 'dislike' | 'super_like') {
-    if (!current) return
-
-    if (action === 'like') {
-      await supabase.rpc('increment_like', { sign_id: current.id })
-    } else if (action === 'super_like') {
-      await supabase.rpc('increment_super_like', { sign_id: current.id })
-    }
-
+  function advance() {
     if (index + 1 >= signs.length) setDone(true)
     else setIndex(i => i + 1)
+  }
+
+  async function recordAction(action: 'like' | 'dislike') {
+    if (!current) return
+    if (action === 'like') await supabase.rpc('increment_like', { sign_id: current.id })
+    advance()
+  }
+
+  async function handleSuperLike() {
+    if (!current) return
+    await supabase.rpc('increment_super_like', { sign_id: current.id })
+    setSuperLikedId(current.id)
+    setShowComment(true)
+  }
+
+  function closeCommentSheet() {
+    setShowComment(false)
+    setSuperLikedId(null)
+    advance()
   }
 
   if (loading) {
@@ -85,28 +96,24 @@ export default function SwipeFeed() {
         <SwipeCard
           key={current.id}
           sign={current}
-          onSwipeLeft={() => recordAction('dislike')}
-          onSwipeRight={() => recordAction('like')}
+          onSwipeLeft={() => { void recordAction('dislike') }}
+          onSwipeRight={() => { void recordAction('like') }}
         />
 
         <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-5">
-          <ActionButton emoji="✕" color="text-red-400 border-red-400 bg-black/45 backdrop-blur-sm" onClick={() => recordAction('dislike')} />
+          <ActionButton emoji="✕" color="text-red-400 border-red-400 bg-black/45 backdrop-blur-sm" onClick={() => { void recordAction('dislike') }} />
           <ActionButton
             emoji="⭐"
             color="text-blue-400 border-blue-400 bg-black/45 backdrop-blur-sm"
-            onClick={() => {
-              setSuperLikedId(current.id)
-              recordAction('super_like')
-              setShowComment(true)
-            }}
+            onClick={handleSuperLike}
           />
-          <ActionButton emoji="♥" color="text-green-400 border-green-400 bg-black/45 backdrop-blur-sm" onClick={() => recordAction('like')} />
+          <ActionButton emoji="♥" color="text-green-400 border-green-400 bg-black/45 backdrop-blur-sm" onClick={() => { void recordAction('like') }} />
         </div>
       </div>
 
 
       {showComment && superLikedId && (
-        <CommentSheet signId={superLikedId} onClose={() => { setShowComment(false); setSuperLikedId(null) }} />
+        <CommentSheet signId={superLikedId} onClose={closeCommentSheet} />
       )}
     </div>
   )
@@ -137,7 +144,9 @@ function SwipeCard({ sign, onSwipeLeft, onSwipeRight }: { sign: Sign; onSwipeLef
       className="relative h-full w-full overflow-hidden cursor-grab active:cursor-grabbing select-none"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={sign.image_url} alt={sign.caption ?? '간판'} className="w-full h-full object-cover" draggable={false} />
+      <img src={sign.image_url} aria-hidden alt="" className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-80" draggable={false} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={sign.image_url} alt={sign.caption ?? '간판'} className="absolute inset-0 w-full h-full object-contain" draggable={false} />
 
       <motion.div style={{ opacity: likeOpacity }} className="absolute top-8 left-6 rotate-[-20deg] border-4 border-green-400 text-green-400 font-black text-2xl px-3 py-1 rounded-xl">
         LIKE

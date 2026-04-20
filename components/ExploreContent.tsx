@@ -94,10 +94,17 @@ export default function ExploreContent() {
           </div>
         ) : (
           <>
-            <div className="columns-2 gap-2">
-              {signs.map((sign, i) => (
-                <SignTile key={sign.id} sign={sign} onOpen={() => setViewerIndex(i)} />
-              ))}
+            <div className="flex gap-2">
+              <div className="flex-1 flex flex-col gap-2">
+                {signs.filter((_, i) => i % 2 === 0).map((sign) => (
+                  <SignTile key={sign.id} sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
+                ))}
+              </div>
+              <div className="flex-1 flex flex-col gap-2">
+                {signs.filter((_, i) => i % 2 === 1).map((sign) => (
+                  <SignTile key={sign.id} sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
+                ))}
+              </div>
             </div>
             <div ref={sentinelRef} className="h-12 flex items-center justify-center">
               {loadingMore && <span className="text-sm text-zinc-400">더 불러오는 중...</span>}
