@@ -5,16 +5,24 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+export default function MainLayout({
+  children,
+  requireAuth = true,
+}: {
+  children: React.ReactNode
+  requireAuth?: boolean
+}) {
   const router = useRouter()
-  const [ready, setReady] = useState(false)
+  const [ready, setReady] = useState(!requireAuth)
 
   useEffect(() => {
+    if (!requireAuth) return
+
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) router.replace('/login')
       else setReady(true)
     })
-  }, [router])
+  }, [requireAuth, router])
 
   if (!ready) {
     return (

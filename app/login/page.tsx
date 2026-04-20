@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import type { Provider } from '@supabase/supabase-js'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -28,6 +29,23 @@ export default function LoginPage() {
       else router.push('/')
     }
     setLoading(false)
+  }
+
+  async function handleSocialLogin(provider: 'kakao' | 'naver') {
+    setLoading(true)
+    setError('')
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: provider as Provider,
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    })
+
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+    }
   }
 
   if (sent) {
@@ -59,6 +77,31 @@ export default function LoginPage() {
           {loading ? '...' : isSignUp ? '회원가입' : '로그인'}
         </button>
       </form>
+
+      <div className="flex items-center gap-2 text-zinc-600 text-xs">
+        <div className="h-px bg-zinc-800 flex-1" />
+        <span>또는 소셜 로그인</span>
+        <div className="h-px bg-zinc-800 flex-1" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => { void handleSocialLogin('kakao') }}
+          className="py-3 rounded-xl bg-[#FEE500] text-black font-bold text-sm disabled:opacity-50"
+        >
+          카카오로 시작
+        </button>
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => { void handleSocialLogin('naver') }}
+          className="py-3 rounded-xl bg-[#03C75A] text-white font-bold text-sm disabled:opacity-50"
+        >
+          네이버로 시작
+        </button>
+      </div>
 
       <button onClick={() => { setIsSignUp(!isSignUp); setError('') }} className="text-sm text-zinc-400 text-center">
         {isSignUp ? '이미 계정이 있어요 → 로그인' : '계정이 없어요 → 회원가입'}

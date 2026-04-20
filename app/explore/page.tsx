@@ -22,9 +22,7 @@ function ExploreContent() {
   const [loading, setLoading] = useState(true)
   const [commentSign, setCommentSign] = useState<string | null>(null)
 
-  useEffect(() => { load() }, [])
-
-  async function load() {
+  const load = async () => {
     const { data: { user } } = await supabase.auth.getUser()
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
@@ -65,6 +63,11 @@ function ExploreContent() {
     }
     setLoading(false)
   }
+
+  useEffect(() => {
+    const timer = setTimeout(() => { void load() }, 0)
+    return () => clearTimeout(timer)
+  }, [])
 
   if (loading) return <div className="flex items-center justify-center min-h-[60dvh] text-3xl animate-pulse">🔥</div>
 

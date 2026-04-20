@@ -1,57 +1,144 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Sign } from '@/types'
 import CommentSheet from './CommentSheet'
 
+type FeedCandidate = Sign & { recommendation_score?: number }
+
 export default function SwipeFeed() {
-  const [signs, setSigns] = useState<Sign[]>([])
+  const [signs, setSigns] = useState<FeedCandidate[]>([])
   const [index, setIndex] = useState(0)
   const [userId, setUserId] = useState<string | null>(null)
   const [showComment, setShowComment] = useState(false)
   const [superLikedId, setSuperLikedId] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  const router = useRouter()
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
-    loadFeed()
-  }, [])
+  const loadFeed = async (currentUserId: string | null) => {
+    const seenIds: string[] = []
+    const likedIds: string[] = []
 
-  async function loadFeed() {
-    if (!userId) {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      // 이미 본 간판 제외
+    if (currentUserId) {
       const { data: seen } = await supabase
         .from('user_sign_actions')
         .select('sign_id')
-        .eq('user_id', user.id)
+        .eq('user_id', currentUserId)
+      seenIds.push(...new Set(seen?.map(s => s.sign_id) ?? []))
 
-      const seenIds = seen?.map(s => s.sign_id) ?? []
-
-      let query = supabase.from('signs').select('*').order('created_at', { ascending: false }).limit(30)
-      if (seenIds.length > 0) query = query.not('id', 'in', `(${seenIds.join(',')})`)
-
-      const { data } = await query
-      setSigns(data ?? [])
+      const { data: myLikes } = await supabase
+        .from('user_sign_actions')
+        .select('sign_id')
+        .eq('user_id', currentUserId)
+        .in('action', ['like', 'super_like'])
+      likedIds.push(...new Set(myLikes?.map(row => row.sign_id) ?? []))
     }
+
+    const recommendedPool = new Map<string, number>()
+
+    if (currentUserId && likedIds.length > 0) {
+      const { data: similarActions } = await supabase
+        .from('user_sign_actions')
+        .select('user_id, sign_id, action')
+        .in('sign_id', likedIds)
+        .in('action', ['like', 'super_like'])
+        .neq('user_id', currentUserId)
+
+      const affinityByUser = new Map<string, number>()
+      similarActions?.forEach(row => {
+        const weight = row.action === 'super_like' ? 2 : 1
+        affinityByUser.set(row.user_id, (affinityByUser.get(row.user_id) ?? 0) + weight)
+      })
+
+      const similarUserIds = [...affinityByUser.keys()]
+      if (similarUserIds.length > 0) {
+        const { data: neighborActions } = await supabase
+          .from('user_sign_actions')
+          .select('user_id, sign_id, action')
+          .in('user_id', similarUserIds)
+          .in('action', ['like', 'super_like'])
+
+        neighborActions?.forEach(row => {
+          if (seenIds.includes(row.sign_id)) return
+          if (likedIds.includes(row.sign_id)) return
+          const affinity = affinityByUser.get(row.user_id) ?? 0
+          const actionWeight = row.action === 'super_like' ? 2 : 1
+          const score = affinity * actionWeight
+          recommendedPool.set(row.sign_id, (recommendedPool.get(row.sign_id) ?? 0) + score)
+        })
+      }
+    }
+
+    const rankedIds = [...recommendedPool.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([id]) => id)
+      .slice(0, 40)
+
+    const merged: FeedCandidate[] = []
+
+    if (rankedIds.length > 0) {
+      const { data: recSigns } = await supabase.from('signs').select('*').in('id', rankedIds)
+      const signMap = new Map((recSigns ?? []).map(sign => [sign.id, sign]))
+      rankedIds.forEach(id => {
+        const sign = signMap.get(id)
+        if (!sign) return
+        merged.push({ ...sign, recommendation_score: recommendedPool.get(id) ?? 0 })
+      })
+    }
+
+    let fallbackQuery = supabase
+      .from('signs')
+      .select('*')
+      .order('like_count', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (seenIds.length > 0) {
+      fallbackQuery = fallbackQuery.not('id', 'in', `(${seenIds.join(',')})`)
+    }
+
+    const { data: fallback } = await fallbackQuery
+
+    const mergedIds = new Set(merged.map(sign => sign.id))
+    ;(fallback ?? []).forEach(sign => {
+      if (!mergedIds.has(sign.id)) merged.push(sign)
+    })
+
+    setSigns(merged)
+    setIndex(0)
+    setDone(merged.length === 0)
   }
 
-  const current = signs[index]
+  useEffect(() => {
+    async function bootstrap() {
+      const { data } = await supabase.auth.getUser()
+      const id = data.user?.id ?? null
+      setUserId(id)
+      await loadFeed(id)
+    }
+
+    void bootstrap()
+  }, [])
 
   async function recordAction(action: 'like' | 'dislike' | 'super_like') {
-    if (!current || !userId) return
-    await supabase.from('user_sign_actions').upsert({
-      user_id: userId,
-      sign_id: current.id,
-      action,
-    })
+    if (!current) return
+
+    if (userId) {
+      await supabase.from('user_sign_actions').upsert({
+        user_id: userId,
+        sign_id: current.id,
+        action,
+      })
+    }
+
     if (index + 1 >= signs.length) setDone(true)
     else setIndex(i => i + 1)
   }
+
+  const current = signs[index]
 
   if (done || signs.length === 0) {
     return (
@@ -86,6 +173,10 @@ export default function SwipeFeed() {
           emoji="⭐"
           color="text-blue-400 border-blue-400"
           onClick={async () => {
+            if (!userId) {
+              router.push('/login')
+              return
+            }
             setSuperLikedId(current.id)
             await recordAction('super_like')
             setShowComment(true)
@@ -96,6 +187,14 @@ export default function SwipeFeed() {
       </div>
 
       <p className="text-xs text-zinc-500">← 패스 &nbsp;|&nbsp; ⭐ 슈퍼라이크(댓글) &nbsp;|&nbsp; → 좋아요</p>
+      {!userId && (
+        <button
+          onClick={() => router.push('/login')}
+          className="text-xs text-yellow-300 underline underline-offset-4"
+        >
+          로그인하면 좋아요 저장/슈퍼라이크 댓글 기능을 사용할 수 있어요
+        </button>
+      )}
 
       {showComment && superLikedId && (
         <CommentSheet signId={superLikedId} onClose={() => { setShowComment(false); setSuperLikedId(null) }} />
@@ -109,7 +208,6 @@ function SwipeCard({ sign, onSwipeLeft, onSwipeRight }: { sign: Sign; onSwipeLef
   const rotate = useTransform(x, [-200, 200], [-20, 20])
   const likeOpacity = useTransform(x, [30, 120], [0, 1])
   const nopeOpacity = useTransform(x, [-120, -30], [1, 0])
-  const dragging = useRef(false)
 
   function handleDragEnd(_: unknown, info: { offset: { x: number } }) {
     if (info.offset.x > 100) {
