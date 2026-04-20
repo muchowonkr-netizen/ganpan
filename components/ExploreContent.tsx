@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Sign } from '@/types'
 import CommentSheet from './CommentSheet'
+import SignViewer from './SignViewer'
 
 function weightedShuffle(signs: Sign[]): Sign[] {
   // 인기순 가중치: 상위권일수록 앞에 나올 확률이 높지만 완전 고정은 아님
@@ -15,6 +16,7 @@ export default function ExploreContent() {
   const [displayed, setDisplayed] = useState<Sign[]>([])
   const [loading, setLoading] = useState(true)
   const [commentSign, setCommentSign] = useState<string | null>(null)
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null)
 
   useEffect(() => { load() }, [])
 
@@ -57,28 +59,31 @@ export default function ExploreContent() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2">
-            {displayed.map(sign => (
-              <SignTile key={sign.id} sign={sign} onComment={setCommentSign} />
+            {displayed.map((sign, i) => (
+              <SignTile key={sign.id} sign={sign} onComment={setCommentSign} onOpen={() => setViewerIndex(i)} />
             ))}
           </div>
         )}
       </div>
 
       {commentSign && <CommentSheet signId={commentSign} onClose={() => setCommentSign(null)} />}
+      {viewerIndex !== null && (
+        <SignViewer signs={displayed} startIndex={viewerIndex} onClose={() => setViewerIndex(null)} />
+      )}
     </div>
   )
 }
 
-function SignTile({ sign, onComment }: { sign: Sign; onComment: (id: string) => void }) {
+function SignTile({ sign, onComment, onOpen }: { sign: Sign; onComment: (id: string) => void; onOpen: () => void }) {
   return (
-    <div className="relative rounded-2xl overflow-hidden aspect-square bg-zinc-900">
+    <div className="relative rounded-2xl overflow-hidden aspect-square bg-zinc-900 cursor-pointer" onClick={onOpen}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-full object-cover" />
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
         {sign.caption && <p className="text-xs text-white font-bold truncate mb-1">{sign.caption}</p>}
         <div className="flex items-center gap-2 text-xs text-white">
           <span className="ml-auto">♥ {sign.like_count}</span>
-          <button onClick={() => onComment(sign.id)}>💬 {sign.comment_count}</button>
+          <button onClick={e => { e.stopPropagation(); onComment(sign.id) }}>💬 {sign.comment_count}</button>
         </div>
       </div>
     </div>
