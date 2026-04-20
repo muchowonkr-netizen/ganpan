@@ -7,18 +7,14 @@ import type { Comment } from '@/types'
 export default function CommentSheet({ signId, onClose }: { signId: string; onClose: () => void }) {
   const [comments, setComments] = useState<Comment[]>([])
   const [text, setText] = useState('')
-  const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
-    loadComments()
-  }, [signId])
+  useEffect(() => { loadComments() }, [signId])
 
   async function loadComments() {
     const { data } = await supabase
       .from('comments')
-      .select('*, users(nickname, avatar_url)')
+      .select('*')
       .eq('sign_id', signId)
       .order('created_at', { ascending: true })
     setComments((data as Comment[]) ?? [])
@@ -26,9 +22,9 @@ export default function CommentSheet({ signId, onClose }: { signId: string; onCl
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!text.trim() || !userId) return
+    if (!text.trim()) return
     setLoading(true)
-    await supabase.from('comments').insert({ user_id: userId, sign_id: signId, content: text.trim() })
+    await supabase.from('comments').insert({ sign_id: signId, content: text.trim() })
     setText('')
     await loadComments()
     setLoading(false)
@@ -50,13 +46,10 @@ export default function CommentSheet({ signId, onClose }: { signId: string; onCl
           {comments.map(c => (
             <div key={c.id} className="flex gap-3">
               <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-sm flex-shrink-0">
-                {c.users?.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.users.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                ) : '👤'}
+                👤
               </div>
               <div>
-                <p className="text-xs text-zinc-400">{c.users?.nickname ?? '익명'}</p>
+                <p className="text-xs text-zinc-400">익명</p>
                 <p className="text-sm mt-0.5">{c.content}</p>
               </div>
             </div>
@@ -67,7 +60,7 @@ export default function CommentSheet({ signId, onClose }: { signId: string; onCl
           <input
             value={text}
             onChange={e => setText(e.target.value)}
-            placeholder="댓글 입력..."
+            placeholder="익명으로 댓글 달기..."
             className="flex-1 bg-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none"
           />
           <button type="submit" disabled={loading || !text.trim()} className="px-4 py-2 bg-yellow-400 text-black rounded-xl text-sm font-bold disabled:opacity-40">

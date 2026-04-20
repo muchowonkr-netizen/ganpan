@@ -1,33 +1,24 @@
 'use client'
 
 import BottomNav from './BottomNav'
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import UploadModal from './UploadModal'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
-  const [ready, setReady] = useState(false)
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) router.replace('/login')
-      else setReady(true)
-    })
-  }, [router])
-
-  if (!ready) {
-    return (
-      <div className="flex items-center justify-center min-h-dvh">
-        <span className="text-3xl animate-spin inline-block">🪧</span>
-      </div>
-    )
-  }
+  const [showUpload, setShowUpload] = useState(false)
 
   return (
     <div className="pb-16 min-h-dvh">
       {children}
       <BottomNav />
+      <button
+        onClick={() => setShowUpload(true)}
+        className="fixed bottom-20 right-4 w-12 h-12 bg-yellow-400 text-black rounded-full text-2xl font-bold shadow-lg flex items-center justify-center z-40 active:scale-95 transition-transform"
+        aria-label="업로드"
+      >
+        +
+      </button>
+      {showUpload && <UploadModal onClose={() => setShowUpload(false)} />}
     </div>
   )
 }

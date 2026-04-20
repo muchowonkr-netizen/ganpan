@@ -1,12 +1,5 @@
-export const dynamic = 'force-dynamic'
-
-import MyContent from '@/components/MyContent'
-import MainLayout from '@/components/MainLayout'
+import { redirect } from 'next/navigation'
 
 export default function MyPage() {
-  return (
-    <MainLayout>
-      <MyContent />
-    </MainLayout>
-  )
+  redirect('/')
 }

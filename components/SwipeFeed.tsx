@@ -9,48 +9,40 @@ import CommentSheet from './CommentSheet'
 export default function SwipeFeed() {
   const [signs, setSigns] = useState<Sign[]>([])
   const [index, setIndex] = useState(0)
-  const [userId, setUserId] = useState<string | null>(null)
   const [showComment, setShowComment] = useState(false)
   const [superLikedId, setSuperLikedId] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
-    loadFeed()
-  }, [])
+  useEffect(() => { loadFeed() }, [])
 
   async function loadFeed() {
-    if (!userId) {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      // 이미 본 간판 제외
-      const { data: seen } = await supabase
-        .from('user_sign_actions')
-        .select('sign_id')
-        .eq('user_id', user.id)
-
-      const seenIds = seen?.map(s => s.sign_id) ?? []
-
-      let query = supabase.from('signs').select('*').order('created_at', { ascending: false }).limit(30)
-      if (seenIds.length > 0) query = query.not('id', 'in', `(${seenIds.join(',')})`)
-
-      const { data } = await query
-      setSigns(data ?? [])
-    }
+    const { data } = await supabase
+      .from('signs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50)
+    setSigns(data ?? [])
+    setLoading(false)
   }
 
   const current = signs[index]
 
   async function recordAction(action: 'like' | 'dislike' | 'super_like') {
-    if (!current || !userId) return
-    await supabase.from('user_sign_actions').upsert({
-      user_id: userId,
-      sign_id: current.id,
-      action,
-    })
+    if (!current) return
+
+    if (action === 'like') {
+      await supabase.rpc('increment_like', { sign_id: current.id })
+    } else if (action === 'super_like') {
+      await supabase.rpc('increment_super_like', { sign_id: current.id })
+    }
+
     if (index + 1 >= signs.length) setDone(true)
     else setIndex(i => i + 1)
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-dvh text-3xl animate-pulse">🪧</div>
   }
 
   if (done || signs.length === 0) {
@@ -58,7 +50,9 @@ export default function SwipeFeed() {
       <div className="flex flex-col items-center justify-center min-h-dvh gap-4">
         <div className="text-5xl">🏁</div>
         <p className="text-lg font-bold">오늘 간판은 다 봤어요!</p>
-        <p className="text-sm text-zinc-400">새 간판이 올라오면 알려드릴게요</p>
+        <button onClick={() => { setIndex(0); setDone(false) }} className="px-6 py-2 bg-yellow-400 text-black rounded-xl font-bold text-sm">
+          처음부터 다시
+        </button>
       </div>
     )
   }
@@ -75,6 +69,7 @@ export default function SwipeFeed() {
       </header>
 
       <SwipeCard
+        key={current.id}
         sign={current}
         onSwipeLeft={() => recordAction('dislike')}
         onSwipeRight={() => recordAction('like')}
@@ -85,9 +80,9 @@ export default function SwipeFeed() {
         <ActionButton
           emoji="⭐"
           color="text-blue-400 border-blue-400"
-          onClick={async () => {
+          onClick={() => {
             setSuperLikedId(current.id)
-            await recordAction('super_like')
+            recordAction('super_like')
             setShowComment(true)
           }}
           big
@@ -109,7 +104,6 @@ function SwipeCard({ sign, onSwipeLeft, onSwipeRight }: { sign: Sign; onSwipeLef
   const rotate = useTransform(x, [-200, 200], [-20, 20])
   const likeOpacity = useTransform(x, [30, 120], [0, 1])
   const nopeOpacity = useTransform(x, [-120, -30], [1, 0])
-  const dragging = useRef(false)
 
   function handleDragEnd(_: unknown, info: { offset: { x: number } }) {
     if (info.offset.x > 100) {
