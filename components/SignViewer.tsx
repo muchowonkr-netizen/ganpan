@@ -55,7 +55,7 @@ export default function SignViewer({ signs, startIndex, onClose }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col" onClick={onClose}>
       <div className="flex items-center px-4 py-3">
         <button onClick={onClose} className="text-zinc-300 text-2xl w-10 h-10 flex items-center justify-center">✕</button>
       </div>
