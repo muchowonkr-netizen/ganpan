@@ -5,43 +5,24 @@ import { supabase } from '@/lib/supabase'
 import type { Sign } from '@/types'
 import CommentSheet from './CommentSheet'
 
-const REGIONS = ['전체', '서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '제주']
-
 export default function ExploreContent() {
-  const [region, setRegion] = useState('전체')
   const [signs, setSigns] = useState<Sign[]>([])
   const [loading, setLoading] = useState(true)
   const [commentSign, setCommentSign] = useState<string | null>(null)
 
-  useEffect(() => { load('전체') }, [])
+  useEffect(() => { load() }, [])
 
-  async function load(r: string) {
+  async function load() {
     setLoading(true)
-    let query = supabase.from('signs').select('*').order('like_count', { ascending: false }).limit(40)
-    if (r !== '전체') query = query.ilike('location_name', `%${r}%`)
-    const { data } = await query
+    const { data } = await supabase.from('signs').select('*').order('like_count', { ascending: false }).limit(40)
     setSigns(data ?? [])
     setLoading(false)
-  }
-
-  function handleRegion(r: string) {
-    setRegion(r)
-    load(r)
   }
 
   return (
     <div className="pt-4">
       <div className="px-4 mb-3">
         <h1 className="text-xl font-black text-yellow-400">🔥 인기 간판</h1>
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto px-4 pb-3 no-scrollbar">
-        {REGIONS.map(r => (
-          <button key={r} onClick={() => handleRegion(r)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-bold transition-colors ${region === r ? 'bg-yellow-400 text-black' : 'bg-zinc-800 text-zinc-400'}`}>
-            {r}
-          </button>
-        ))}
       </div>
 
       <div className="px-4">
