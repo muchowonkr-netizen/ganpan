@@ -16,18 +16,21 @@ export default function SwipeFeed() {
   const [loading, setLoading] = useState(true)
 
   async function loadFeed() {
-    const [{ data: popular }, { data: newest }] = await Promise.all([
-      supabase.from('signs').select('*').order('like_count', { ascending: false }).limit(30),
-      supabase.from('signs').select('*').order('created_at', { ascending: false }).limit(30),
-    ])
-    const seen = new Set<string>()
-    const merged: typeof popular = []
-    for (const s of [...(popular ?? []), ...(newest ?? [])]) {
-      if (!seen.has(s.id)) { seen.add(s.id); merged.push(s) }
+    setLoading(true)
+    try {
+      const [{ data: popular }, { data: newest }] = await Promise.all([
+        supabase.from('signs').select('*').order('like_count', { ascending: false }).limit(30),
+        supabase.from('signs').select('*').order('created_at', { ascending: false }).limit(30),
+      ])
+      const seen = new Set<string>()
+      const merged: Sign[] = []
+      for (const s of [...(popular ?? []), ...(newest ?? [])]) {
+        if (!seen.has(s.id)) { seen.add(s.id); merged.push(s) }
+      }
+      setSigns(merged.sort(() => Math.random() - 0.5))
+    } finally {
+      setLoading(false)
     }
-    // 인기순·최신순 섞기
-    setSigns(merged.sort(() => Math.random() - 0.5))
-    setLoading(false)
   }
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -67,7 +70,7 @@ export default function SwipeFeed() {
     return (
       <div className="flex flex-col items-center justify-center min-h-dvh gap-4">
         <p className="text-lg font-bold">간판여행을 모두 마쳤습니다…</p>
-        <button onClick={() => { setIndex(0); setDone(false) }} className="px-6 py-2 bg-yellow-400 text-black rounded-xl font-bold text-sm">
+        <button onClick={() => { setIndex(0); setDone(false); void loadFeed() }} className="px-6 py-2 bg-yellow-400 text-black rounded-xl font-bold text-sm">
           처음부터 다시
         </button>
       </div>
