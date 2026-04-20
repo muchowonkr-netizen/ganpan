@@ -25,9 +25,8 @@ export default function CommentSheet({ signId, onClose }: { signId: string; onCl
     if (!text.trim()) return
     setLoading(true)
     await supabase.from('comments').insert({ sign_id: signId, content: text.trim() })
-    setText('')
-    await loadComments()
     setLoading(false)
+    onClose()
   }
 
   return (
