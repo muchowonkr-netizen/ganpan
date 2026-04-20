@@ -8,7 +8,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const [showUpload, setShowUpload] = useState(false)
   const [toast, setToast] = useState(false)
   const pathname = usePathname()
-  const isSwipePage = pathname === '/'
+  const isSwipePage = pathname === '/explore'
 
   useEffect(() => {
     if (!toast) return
@@ -38,7 +38,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       )}
       {toast && (
         <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-zinc-800 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-lg whitespace-nowrap animate-fade-in">
-          🎉 제보가 완료됐어요!
+          🎉 제보 감사합니다…
         </div>
       )}
     </div>

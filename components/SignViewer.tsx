@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import type { Sign, Comment } from '@/types'
@@ -16,10 +16,22 @@ export default function SignViewer({ signs, startIndex, onClose }: {
   const [previewComment, setPreviewComment] = useState<Comment | null>(null)
 
   const current = signs[index]
+  const onCloseRef = useRef(onClose)
+  useEffect(() => { onCloseRef.current = onClose })
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
+  }, [])
+
+  useEffect(() => {
+    window.history.pushState({ signViewer: true }, '')
+    function handlePop() { onCloseRef.current() }
+    window.addEventListener('popstate', handlePop)
+    return () => {
+      window.removeEventListener('popstate', handlePop)
+      if (window.history.state?.signViewer) window.history.back()
+    }
   }, [])
 
   useEffect(() => {
@@ -45,7 +57,7 @@ export default function SignViewer({ signs, startIndex, onClose }: {
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col" onClick={onClose}>
       <div className="flex items-center px-4 py-3">
-        <button onClick={onClose} className="text-zinc-400 text-xl px-1">✕</button>
+        <button onClick={onClose} className="text-zinc-300 text-2xl w-10 h-10 flex items-center justify-center">✕</button>
       </div>
 
       <div className="flex-1 flex flex-col items-center px-4 gap-4 overflow-hidden">

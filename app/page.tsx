@@ -1,12 +1,12 @@
 export const dynamic = 'force-dynamic'
 
-import SwipeFeed from '@/components/SwipeFeed'
+import ExploreContent from '@/components/ExploreContent'
 import MainLayout from '@/components/MainLayout'
 
 export default function HomePage() {
   return (
     <MainLayout>
-      <SwipeFeed />
+      <ExploreContent />
     </MainLayout>
   )
 }
