@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { compressImage } from '@/lib/compressImage'
 
 export default function UploadModal({ onClose }: { onClose: () => void }) {
   const [file, setFile] = useState<File | null>(null)
@@ -23,10 +24,10 @@ export default function UploadModal({ onClose }: { onClose: () => void }) {
     if (!file) return
     setUploading(true)
 
-    const ext = file.name.split('.').pop()
-    const path = `signs/anon/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+    const compressed = await compressImage(file)
+    const path = `signs/anon/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`
 
-    const { error: upErr } = await supabase.storage.from('signs').upload(path, file)
+    const { error: upErr } = await supabase.storage.from('signs').upload(path, compressed)
     if (upErr) {
       alert('업로드 실패: ' + upErr.message)
       setUploading(false)

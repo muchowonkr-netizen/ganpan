@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { compressImage } from '@/lib/compressImage'
 import type { Sign } from '@/types'
 
 export default function AdminContent() {
@@ -58,10 +59,10 @@ export default function AdminContent() {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
-      const ext = file.name.split('.').pop()
-      const path = `signs/admin/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+      const compressed = await compressImage(file)
+      const path = `signs/admin/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`
 
-      const { error: upErr } = await supabase.storage.from('signs').upload(path, file)
+      const { error: upErr } = await supabase.storage.from('signs').upload(path, compressed)
       if (upErr) { setBulkProgress(p => p ? { ...p, done: p.done + 1 } : null); continue }
 
       const { data: { publicUrl } } = supabase.storage.from('signs').getPublicUrl(path)
