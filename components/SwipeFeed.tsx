@@ -134,10 +134,10 @@ function SwipeCard({ sign, onSwipeLeft, onSwipeRight }: { sign: Sign; onSwipeLef
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
-      className="relative h-full w-full overflow-hidden bg-black cursor-grab active:cursor-grabbing select-none"
+      className="relative h-full w-full overflow-hidden cursor-grab active:cursor-grabbing select-none"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={sign.image_url} alt={sign.caption ?? '간판'} className="w-full h-full object-contain" draggable={false} />
+      <img src={sign.image_url} alt={sign.caption ?? '간판'} className="w-full h-full object-cover" draggable={false} />
 
       <motion.div style={{ opacity: likeOpacity }} className="absolute top-8 left-6 rotate-[-20deg] border-4 border-green-400 text-green-400 font-black text-2xl px-3 py-1 rounded-xl">
         LIKE
