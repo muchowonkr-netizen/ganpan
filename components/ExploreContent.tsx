@@ -74,7 +74,7 @@ export default function ExploreContent() {
   return (
     <div className="pt-4">
       <div className="px-4 mb-3 flex items-center justify-between">
-        <h1 className="text-xl font-black text-yellow-400">🔥 인기간판</h1>
+        <h1 className="text-xl font-black text-white">간판을 좋아하세요...</h1>
         <Link
           href="/"
           className="w-9 h-9 rounded-full bg-zinc-800 text-zinc-200 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
@@ -94,9 +94,9 @@ export default function ExploreContent() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-3 auto-rows-[80px] gap-2">
+            <div className="columns-2 gap-2">
               {signs.map((sign, i) => (
-                <SignTile key={sign.id} sign={sign} index={i} onComment={setCommentSign} onOpen={() => setViewerIndex(i)} />
+                <SignTile key={sign.id} sign={sign} onOpen={() => setViewerIndex(i)} />
               ))}
             </div>
             <div ref={sentinelRef} className="h-12 flex items-center justify-center">
@@ -115,25 +115,16 @@ export default function ExploreContent() {
   )
 }
 
-function SignTile({ sign, index, onComment, onOpen }: { sign: Sign; index: number; onComment: (id: string) => void; onOpen: () => void }) {
-  const pattern = index % 12
-  const layoutClass = pattern === 0 || pattern === 7
-    ? 'col-span-2 row-span-2'
-    : pattern === 3 || pattern === 10
-      ? 'col-span-1 row-span-2'
-      : 'col-span-1 row-span-1'
-
+function SignTile({ sign, onOpen }: { sign: Sign; onOpen: () => void }) {
   return (
-    <div className={`relative rounded-2xl overflow-hidden bg-zinc-900 cursor-pointer ${layoutClass}`} onClick={onOpen}>
+    <div className="relative rounded-2xl overflow-hidden cursor-pointer break-inside-avoid mb-2" onClick={onOpen}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-full object-cover" />
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-        {sign.caption && <p className="text-xs text-white font-bold truncate mb-1">{sign.caption}</p>}
-        <div className="flex items-center gap-2 text-xs text-white">
-          <span className="ml-auto">♥ {sign.like_count}</span>
-          <button onClick={e => { e.stopPropagation(); onComment(sign.id) }}>💬 {sign.comment_count}</button>
+      <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-auto block" />
+      {sign.caption && (
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+          <p className="text-xs text-white font-bold truncate">{sign.caption}</p>
         </div>
-      </div>
+      )}
     </div>
   )
 }

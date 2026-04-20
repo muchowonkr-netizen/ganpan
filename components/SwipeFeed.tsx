@@ -134,10 +134,10 @@ function SwipeCard({ sign, onSwipeLeft, onSwipeRight }: { sign: Sign; onSwipeLef
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
-      className="relative h-full w-full overflow-hidden bg-black cursor-grab active:cursor-grabbing select-none"
+      className="relative h-full w-full overflow-hidden cursor-grab active:cursor-grabbing select-none"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={sign.image_url} alt={sign.caption ?? '간판'} className="w-full h-full object-contain" draggable={false} />
+      <img src={sign.image_url} alt={sign.caption ?? '간판'} className="w-full h-full object-cover" draggable={false} />
 
       <motion.div style={{ opacity: likeOpacity }} className="absolute top-8 left-6 rotate-[-20deg] border-4 border-green-400 text-green-400 font-black text-2xl px-3 py-1 rounded-xl">
         LIKE
@@ -149,11 +149,6 @@ function SwipeCard({ sign, onSwipeLeft, onSwipeRight }: { sign: Sign; onSwipeLef
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-5 pb-24">
         {sign.caption && <p className="font-bold text-lg leading-snug">{sign.caption}</p>}
         {sign.location_name && <p className="text-sm text-zinc-300 mt-1">📍 {sign.location_name}</p>}
-        <div className="flex gap-3 mt-2 text-xs text-zinc-400">
-          <span>♥ {sign.like_count}</span>
-          <span>⭐ {sign.super_like_count}</span>
-          <span>💬 {sign.comment_count}</span>
-        </div>
       </div>
     </motion.div>
   )
