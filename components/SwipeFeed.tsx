@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import type { Sign } from '@/types'
 import CommentSheet from './CommentSheet'
+import Link from 'next/link'
 
 export default function SwipeFeed() {
   const [signs, setSigns] = useState<Sign[]>([])
@@ -13,8 +14,6 @@ export default function SwipeFeed() {
   const [superLikedId, setSuperLikedId] = useState<string | null>(null)
   const [done, setDone] = useState(false)
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => { loadFeed() }, [])
 
   async function loadFeed() {
     const [{ data: popular }, { data: newest }] = await Promise.all([
@@ -30,6 +29,9 @@ export default function SwipeFeed() {
     setSigns(merged.sort(() => Math.random() - 0.5))
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void loadFeed() }, [])
 
   const current = signs[index]
 
@@ -70,6 +72,12 @@ export default function SwipeFeed() {
     <div className="flex flex-col items-center min-h-dvh pt-4 px-4 gap-4">
       <header className="w-full flex items-center justify-between py-2">
         <h1 className="text-xl font-black text-yellow-400">🪧 간판을 좋아하세요...</h1>
+        <Link
+          href="/explore"
+          className="px-3 py-1.5 rounded-full bg-zinc-800 text-zinc-200 text-sm font-bold active:scale-95 transition-transform"
+        >
+          인기간판
+        </Link>
       </header>
 
       <SwipeCard
