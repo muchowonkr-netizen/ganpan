@@ -8,7 +8,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const [showUpload, setShowUpload] = useState(false)
   const [toast, setToast] = useState(false)
   const pathname = usePathname()
-  const isSwipePage = pathname === '/'
+  const isSwipePage = pathname === '/explore'
 
   useEffect(() => {
     if (!toast) return

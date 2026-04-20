@@ -36,11 +36,11 @@ export default function ExploreContent() {
       <div className="px-4 mb-3 flex items-center justify-between">
         <h1 className="text-xl font-black text-white">간판을 좋아하세요...</h1>
         <Link
-          href="/"
+          href="/explore"
           className="w-9 h-9 rounded-full bg-zinc-800 text-zinc-200 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
           aria-label="간판여행"
         >
-          🌏
+          🍀
         </Link>
       </div>
 
