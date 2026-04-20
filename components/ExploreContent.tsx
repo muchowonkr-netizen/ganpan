@@ -1,75 +1,35 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Sign } from '@/types'
 import CommentSheet from './CommentSheet'
 import SignViewer from './SignViewer'
 import Link from 'next/link'
 
-const PAGE_SIZE = 20
-
 export default function ExploreContent() {
   const [signs, setSigns] = useState<Sign[]>([])
   const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
   const [commentSign, setCommentSign] = useState<string | null>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
-  const sentinelRef = useRef<HTMLDivElement | null>(null)
-  const pageRef = useRef(0)
 
-  const loadMore = useCallback(async (reset = false) => {
-    if (!reset && (loading || loadingMore || !hasMore)) return
-    if (reset) {
-      setLoading(true)
-      setHasMore(true)
-      pageRef.current = 0
-    } else {
-      setLoadingMore(true)
+  async function loadFeed() {
+    setLoading(true)
+    const [{ data: popular }, { data: newest }] = await Promise.all([
+      supabase.from('signs').select('*').order('like_count', { ascending: false }).limit(50),
+      supabase.from('signs').select('*').order('created_at', { ascending: false }).limit(50),
+    ])
+    const seen = new Set<string>()
+    const merged: Sign[] = []
+    for (const s of [...(popular ?? []), ...(newest ?? [])]) {
+      if (!seen.has(s.id)) { seen.add(s.id); merged.push(s) }
     }
-
-    const pageToLoad = reset ? 0 : pageRef.current
-    const from = pageToLoad * PAGE_SIZE
-    const to = from + PAGE_SIZE - 1
-    const { data } = await supabase
-      .from('signs').select('*')
-      .order('like_count', { ascending: false })
-      .range(from, to)
-
-    const fetched = data ?? []
-    setSigns(prev => {
-      if (reset) return fetched
-      const seen = new Set(prev.map(sign => sign.id))
-      const merged = [...prev]
-      for (const sign of fetched) {
-        if (!seen.has(sign.id)) merged.push(sign)
-      }
-      return merged
-    })
-
-    if (fetched.length < PAGE_SIZE) setHasMore(false)
-    pageRef.current = pageToLoad + 1
+    setSigns(merged.sort(() => Math.random() - 0.5))
     setLoading(false)
-    setLoadingMore(false)
-  }, [hasMore, loading, loadingMore])
+  }
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect,react-hooks/exhaustive-deps
-  useEffect(() => { void loadMore(true) }, [])
-
-  useEffect(() => {
-    if (!sentinelRef.current || loading) return
-
-    const observer = new IntersectionObserver((entries) => {
-      const [entry] = entries
-      if (entry.isIntersecting) {
-        void loadMore()
-      }
-    }, { rootMargin: '200px 0px' })
-
-    observer.observe(sentinelRef.current)
-    return () => observer.disconnect()
-  }, [loadMore, loading])
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void loadFeed() }, [])
 
   return (
     <div className="pt-4">
@@ -106,10 +66,7 @@ export default function ExploreContent() {
                 ))}
               </div>
             </div>
-            <div ref={sentinelRef} className="h-12 flex items-center justify-center">
-              {loadingMore && <span className="text-sm text-zinc-400">더 불러오는 중...</span>}
-              {!hasMore && <span className="text-xs text-zinc-600">마지막 간판까지 모두 확인했어요...</span>}
-            </div>
+            <div className="h-12" />
           </>
         )}
       </div>
