@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Sign } from '@/types'
 
@@ -13,6 +13,8 @@ export default function AdminContent() {
   const [signs, setSigns] = useState<Sign[]>([])
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null)
+  const bulkRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -46,6 +48,31 @@ export default function AdminContent() {
     await supabase.from('signs').delete().eq('id', sign.id)
     setSigns(prev => prev.filter(s => s.id !== sign.id))
     setDeletingId(null)
+  }
+
+  async function handleBulkUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
+
+    setBulkProgress({ done: 0, total: files.length })
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      const ext = file.name.split('.').pop()
+      const path = `signs/admin/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+
+      const { error: upErr } = await supabase.storage.from('signs').upload(path, file)
+      if (upErr) { setBulkProgress(p => p ? { ...p, done: p.done + 1 } : null); continue }
+
+      const { data: { publicUrl } } = supabase.storage.from('signs').getPublicUrl(path)
+      await supabase.from('signs').insert({ image_url: publicUrl })
+
+      setBulkProgress({ done: i + 1, total: files.length })
+    }
+
+    if (bulkRef.current) bulkRef.current.value = ''
+    setBulkProgress(null)
+    await loadSigns()
   }
 
   async function handleLogout() {
@@ -85,6 +112,27 @@ export default function AdminContent() {
           <button onClick={handleLogout} className="text-xs text-zinc-500 px-3 py-1.5 rounded-lg bg-zinc-800">로그아웃</button>
         </div>
       </div>
+
+      {/* 덤프 업로드 */}
+      <button
+        onClick={() => bulkRef.current?.click()}
+        disabled={bulkProgress !== null}
+        className="w-full py-3 mb-4 rounded-xl bg-zinc-800 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+      >
+        {bulkProgress
+          ? `업로드 중... ${bulkProgress.done} / ${bulkProgress.total}`
+          : '📁 사진 여러 장 올리기'}
+      </button>
+      <input ref={bulkRef} type="file" accept="image/*" multiple className="hidden" onChange={handleBulkUpload} />
+
+      {bulkProgress && (
+        <div className="w-full bg-zinc-800 rounded-full h-2 mb-4">
+          <div
+            className="bg-yellow-400 h-2 rounded-full transition-all"
+            style={{ width: `${(bulkProgress.done / bulkProgress.total) * 100}%` }}
+          />
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-3xl animate-pulse">🪧</div>
