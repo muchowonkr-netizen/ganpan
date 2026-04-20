@@ -90,7 +90,6 @@ export default function SwipeFeed() {
         <ActionButton emoji="♥" color="text-green-400 border-green-400" onClick={() => recordAction('like')} />
       </div>
 
-      <p className="text-xs text-zinc-500">← 패스 &nbsp;|&nbsp; ⭐ 슈퍼라이크(댓글) &nbsp;|&nbsp; → 좋아요</p>
 
       {showComment && superLikedId && (
         <CommentSheet signId={superLikedId} onClose={() => { setShowComment(false); setSuperLikedId(null) }} />
