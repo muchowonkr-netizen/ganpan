@@ -46,7 +46,7 @@ export default function ExploreContent() {
 
       <div className="px-4">
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-3xl animate-pulse">🔥</div>
+          <div className="flex items-center justify-center py-20 text-sm text-zinc-500">잠시만 기다려 주세요…</div>
         ) : signs.length === 0 ? (
           <div className="flex flex-col items-center py-16 gap-3 text-zinc-600">
             <span className="text-4xl">🪧</span>
