@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Comment } from '@/types'
 
-export default function CommentSheet({ signId, onClose }: { signId: string; onClose: () => void }) {
+export default function CommentSheet({ signId, onClose, readOnly }: { signId: string; onClose: () => void; readOnly?: boolean }) {
   const [comments, setComments] = useState<Comment[]>([])
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
@@ -34,7 +34,7 @@ export default function CommentSheet({ signId, onClose }: { signId: string; onCl
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative bg-zinc-900 rounded-t-3xl max-h-[75dvh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
-          <h2 className="font-bold">⭐ 슈퍼라이크 한줄평</h2>
+          <h2 className="font-bold">한줄평</h2>
           <button onClick={onClose} className="text-zinc-400 text-xl">✕</button>
         </div>
 
@@ -55,17 +55,19 @@ export default function CommentSheet({ signId, onClose }: { signId: string; onCl
           ))}
         </div>
 
-        <form onSubmit={submit} className="px-4 py-3 border-t border-zinc-800 flex gap-2">
-          <input
-            value={text}
-            onChange={e => setText(e.target.value)}
-            placeholder="익명으로 한줄평 달기..."
-            className="flex-1 bg-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none"
-          />
-          <button type="submit" disabled={loading || !text.trim()} className="px-4 py-2 bg-yellow-400 text-black rounded-xl text-sm font-bold disabled:opacity-40">
-            전송
-          </button>
-        </form>
+        {!readOnly && (
+          <form onSubmit={submit} className="px-4 py-3 border-t border-zinc-800 flex gap-2">
+            <input
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder="익명으로 한줄평 달기..."
+              className="flex-1 bg-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none"
+            />
+            <button type="submit" disabled={loading || !text.trim()} className="px-4 py-2 bg-yellow-400 text-black rounded-xl text-sm font-bold disabled:opacity-40">
+              전송
+            </button>
+          </form>
+        )}
       </div>
     </div>
   )
