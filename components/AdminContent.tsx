@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { compressImage } from '@/lib/compressImage'
 import type { Sign } from '@/types'
+import { compressImage } from '@/lib/compressImage'
 
 export default function AdminContent() {
   const [loggedIn, setLoggedIn] = useState(false)
@@ -15,6 +15,9 @@ export default function AdminContent() {
   const [loading, setLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [selectMode, setSelectMode] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
   const bulkRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -36,9 +39,7 @@ export default function AdminContent() {
 
   async function loadSigns() {
     setLoading(true)
-    const { data } = await supabase
-      .from('signs').select('*')
-      .order('created_at', { ascending: false })
+    const { data } = await supabase.from('signs').select('*').order('created_at', { ascending: false })
     setSigns(data ?? [])
     setLoading(false)
   }
@@ -51,26 +52,46 @@ export default function AdminContent() {
     setDeletingId(null)
   }
 
+  async function handleBulkDelete() {
+    if (selected.size === 0) return
+    if (!confirm(`${selected.size}개를 삭제할까요?`)) return
+    setBulkDeleting(true)
+    const ids = Array.from(selected)
+    await supabase.from('signs').delete().in('id', ids)
+    setSigns(prev => prev.filter(s => !selected.has(s.id)))
+    setSelected(new Set())
+    setSelectMode(false)
+    setBulkDeleting(false)
+  }
+
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selected.size === signs.length) setSelected(new Set())
+    else setSelected(new Set(signs.map(s => s.id)))
+  }
+
   async function handleBulkUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
     if (files.length === 0) return
-
     setBulkProgress({ done: 0, total: files.length })
-
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const compressed = await compressImage(file)
       const path = `signs/admin/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`
-
       const { error: upErr } = await supabase.storage.from('signs').upload(path, compressed)
-      if (upErr) { setBulkProgress(p => p ? { ...p, done: p.done + 1 } : null); continue }
-
-      const { data: { publicUrl } } = supabase.storage.from('signs').getPublicUrl(path)
-      await supabase.from('signs').insert({ image_url: publicUrl })
-
+      if (!upErr) {
+        const { data: { publicUrl } } = supabase.storage.from('signs').getPublicUrl(path)
+        await supabase.from('signs').insert({ image_url: publicUrl })
+      }
       setBulkProgress({ done: i + 1, total: files.length })
     }
-
     if (bulkRef.current) bulkRef.current.value = ''
     setBulkProgress(null)
     await loadSigns()
@@ -114,49 +135,72 @@ export default function AdminContent() {
         </div>
       </div>
 
-      {/* 덤프 업로드 */}
-      <button
-        onClick={() => bulkRef.current?.click()}
-        disabled={bulkProgress !== null}
-        className="w-full py-3 mb-4 rounded-xl bg-zinc-800 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-      >
-        {bulkProgress
-          ? `업로드 중... ${bulkProgress.done} / ${bulkProgress.total}`
-          : '📁 사진 여러 장 올리기'}
+      {/* 업로드 */}
+      <button onClick={() => bulkRef.current?.click()} disabled={bulkProgress !== null}
+        className="w-full py-3 mb-2 rounded-xl bg-zinc-800 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+        {bulkProgress ? `업로드 중... ${bulkProgress.done} / ${bulkProgress.total}` : '📁 사진 여러 장 올리기'}
       </button>
       <input ref={bulkRef} type="file" accept="image/*" multiple className="hidden" onChange={handleBulkUpload} />
-
       {bulkProgress && (
-        <div className="w-full bg-zinc-800 rounded-full h-2 mb-4">
-          <div
-            className="bg-yellow-400 h-2 rounded-full transition-all"
-            style={{ width: `${(bulkProgress.done / bulkProgress.total) * 100}%` }}
-          />
+        <div className="w-full bg-zinc-800 rounded-full h-2 mb-3">
+          <div className="bg-yellow-400 h-2 rounded-full transition-all" style={{ width: `${(bulkProgress.done / bulkProgress.total) * 100}%` }} />
         </div>
       )}
+
+      {/* 선택 삭제 툴바 */}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => { setSelectMode(v => !v); setSelected(new Set()) }}
+          className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${selectMode ? 'bg-zinc-600 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
+          {selectMode ? '선택 취소' : '☑ 선택 삭제'}
+        </button>
+        {selectMode && (
+          <>
+            <button onClick={toggleSelectAll}
+              className="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-300 text-sm font-bold">
+              {selected.size === signs.length ? '전체 해제' : '전체 선택'}
+            </button>
+            <button onClick={handleBulkDelete} disabled={selected.size === 0 || bulkDeleting}
+              className="px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-bold disabled:opacity-40">
+              {bulkDeleting ? '...' : `삭제 ${selected.size > 0 ? `(${selected.size})` : ''}`}
+            </button>
+          </>
+        )}
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-3xl animate-pulse">🪧</div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
           {signs.map(sign => (
-            <div key={sign.id} className="relative rounded-2xl overflow-hidden aspect-square bg-zinc-900">
+            <div key={sign.id}
+              onClick={selectMode ? () => toggleSelect(sign.id) : undefined}
+              className={`relative rounded-2xl overflow-hidden aspect-square bg-zinc-900 ${selectMode ? 'cursor-pointer' : ''}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+
+              {selectMode && (
+                <div className={`absolute inset-0 transition-colors ${selected.has(sign.id) ? 'bg-yellow-400/30' : 'bg-transparent'}`} />
+              )}
+              {selectMode && (
+                <div className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-black transition-colors ${selected.has(sign.id) ? 'bg-yellow-400 border-yellow-400 text-black' : 'border-white bg-black/40'}`}>
+                  {selected.has(sign.id) ? '✓' : ''}
+                </div>
+              )}
+
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
               <div className="absolute bottom-0 left-0 right-0 p-2">
                 {sign.caption && <p className="text-xs text-white truncate mb-1">{sign.caption}</p>}
                 <p className="text-[10px] text-zinc-400 mb-1">{new Date(sign.created_at).toLocaleDateString('ko-KR')}</p>
-                <div className="flex items-center gap-1 text-xs text-white">
-                  <span>♥ {sign.like_count}</span>
-                  <button
-                    onClick={() => handleDelete(sign)}
-                    disabled={deletingId === sign.id}
-                    className="ml-auto px-2 py-0.5 bg-red-500 text-white rounded-lg text-xs font-bold disabled:opacity-40 active:scale-95"
-                  >
-                    {deletingId === sign.id ? '...' : '삭제'}
-                  </button>
-                </div>
+                {!selectMode && (
+                  <div className="flex items-center gap-1 text-xs text-white">
+                    <span>♥ {sign.like_count}</span>
+                    <button onClick={() => handleDelete(sign)} disabled={deletingId === sign.id}
+                      className="ml-auto px-2 py-0.5 bg-red-500 text-white rounded-lg text-xs font-bold disabled:opacity-40 active:scale-95">
+                      {deletingId === sign.id ? '...' : '삭제'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
