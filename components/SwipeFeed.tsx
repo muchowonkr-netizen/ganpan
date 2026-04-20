@@ -149,11 +149,6 @@ function SwipeCard({ sign, onSwipeLeft, onSwipeRight }: { sign: Sign; onSwipeLef
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-5 pb-24">
         {sign.caption && <p className="font-bold text-lg leading-snug">{sign.caption}</p>}
         {sign.location_name && <p className="text-sm text-zinc-300 mt-1">📍 {sign.location_name}</p>}
-        <div className="flex gap-3 mt-2 text-xs text-zinc-400">
-          <span>♥ {sign.like_count}</span>
-          <span>⭐ {sign.super_like_count}</span>
-          <span>💬 {sign.comment_count}</span>
-        </div>
       </div>
     </motion.div>
   )
