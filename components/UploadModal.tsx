@@ -80,7 +80,7 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
 
           <input
             type="text"
-            placeholder="한줄평 (선택)"
+            placeholder="한줄평을 남겨보세요…"
             value={caption}
             onChange={e => setCaption(e.target.value)}
             maxLength={100}
@@ -92,7 +92,7 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
             {uploading ? '업로드 중...' : '제보하기'}
           </button>
 
-          <p className="text-xs text-zinc-600 text-center">누구나 제보할 수 있어요. 부적절한 사진은 삭제될 수 있어요.</p>
+
         </form>
       </div>
     </div>
