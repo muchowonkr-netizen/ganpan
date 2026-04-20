@@ -40,7 +40,7 @@ export default function CommentSheet({ signId, onClose }: { signId: string; onCl
 
         <div className="flex-1 overflow-y-auto px-5 py-3 flex flex-col gap-3">
           {comments.length === 0 && (
-            <p className="text-zinc-500 text-sm text-center py-6">첫 한줄평을 남겨보세요!</p>
+            <p className="text-zinc-500 text-sm text-center py-6">첫 한줄평을 남겨보세요…</p>
           )}
           {comments.map(c => (
             <div key={c.id} className="flex gap-3">
