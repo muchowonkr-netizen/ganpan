@@ -1,13 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import UploadModal from './UploadModal'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [showUpload, setShowUpload] = useState(false)
+  const [toast, setToast] = useState(false)
   const pathname = usePathname()
   const isSwipePage = pathname === '/'
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(false), 3000)
+    return () => clearTimeout(t)
+  }, [toast])
 
   return (
     <div className="pb-4 min-h-dvh">
@@ -21,8 +28,18 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           >
             +
           </button>
-          {showUpload && <UploadModal onClose={() => setShowUpload(false)} />}
+          {showUpload && (
+            <UploadModal
+              onClose={() => setShowUpload(false)}
+              onSuccess={() => setToast(true)}
+            />
+          )}
         </>
+      )}
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-zinc-800 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-lg whitespace-nowrap animate-fade-in">
+          🎉 제보가 완료됐어요!
+        </div>
       )}
     </div>
   )
