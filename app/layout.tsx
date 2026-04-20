@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: '간판왕 — 웃긴 간판 아카이브',
+  title: '간판을 좋아하세요... — 웃긴 간판 아카이브',
   description: '길에서 마주친 재밌는 간판을 모아보는 곳',
 }
 

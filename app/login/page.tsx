@@ -44,7 +44,7 @@ export default function LoginPage() {
     <div className="flex flex-col justify-center min-h-dvh px-6 gap-8">
       <div className="text-center">
         <div className="text-5xl mb-2">🪧</div>
-        <h1 className="text-2xl font-black">간판왕</h1>
+        <h1 className="text-2xl font-black">간판을 좋아하세요...</h1>
         <p className="text-sm text-zinc-400 mt-1">웃긴 간판 아카이브</p>
       </div>
 

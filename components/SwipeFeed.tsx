@@ -70,7 +70,7 @@ export default function SwipeFeed() {
   return (
     <div className="flex flex-col items-center min-h-dvh pt-4 px-4 gap-4">
       <header className="w-full flex items-center justify-between py-2">
-        <h1 className="text-xl font-black text-yellow-400">🪧 간판왕</h1>
+        <h1 className="text-xl font-black text-yellow-400">🪧 간판을 좋아하세요...</h1>
         <span className="text-xs text-zinc-500">{index + 1} / {signs.length}</span>
       </header>
 
