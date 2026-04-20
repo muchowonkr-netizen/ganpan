@@ -66,8 +66,7 @@ export default function SwipeFeed() {
   if (done || signs.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-dvh gap-4">
-        <div className="text-5xl">🏁</div>
-        <p className="text-lg font-bold">오늘 간판은 다 봤어요!</p>
+        <p className="text-lg font-bold">간판여행을 모두 마쳤습니다…</p>
         <button onClick={() => { setIndex(0); setDone(false) }} className="px-6 py-2 bg-yellow-400 text-black rounded-xl font-bold text-sm">
           처음부터 다시
         </button>

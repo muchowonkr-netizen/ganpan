@@ -43,29 +43,27 @@ export default function SignViewer({ signs, startIndex, onClose }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black flex flex-col" onClick={onClose}>
       <div className="flex items-center px-4 py-3">
         <button onClick={onClose} className="text-zinc-400 text-xl px-1">✕</button>
       </div>
 
       <div className="flex-1 flex flex-col items-center px-4 gap-4 overflow-hidden">
         {current && (
-          <ViewCard sign={current} onSwipeLeft={goNext} onSwipeRight={goPrev} />
+          <ViewCard sign={current} onSwipeLeft={goNext} onSwipeRight={goPrev} onClick={e => e.stopPropagation()} />
         )}
 
-        <button
-          onClick={() => setShowComments(true)}
-          className="w-full text-left px-3 py-2.5 rounded-xl bg-zinc-900 active:bg-zinc-800 transition-colors"
-        >
-          {previewComment ? (
+        {previewComment && (
+          <button
+            onClick={e => { e.stopPropagation(); setShowComments(true) }}
+            className="w-full text-left px-3 py-2.5 rounded-xl bg-zinc-900 active:bg-zinc-800 transition-colors"
+          >
             <div className="flex items-start gap-2">
               <span className="text-zinc-500 text-xs mt-0.5">💬</span>
               <p className="text-sm text-zinc-300 flex-1 line-clamp-2">{previewComment.content}</p>
             </div>
-          ) : (
-            <p className="text-xs text-zinc-500">아직 한줄평이 없어요</p>
-          )}
-        </button>
+          </button>
+        )}
       </div>
 
       {showComments && current && (
@@ -75,7 +73,7 @@ export default function SignViewer({ signs, startIndex, onClose }: {
   )
 }
 
-function ViewCard({ sign, onSwipeLeft, onSwipeRight }: { sign: Sign; onSwipeLeft: () => void; onSwipeRight: () => void }) {
+function ViewCard({ sign, onSwipeLeft, onSwipeRight, onClick }: { sign: Sign; onSwipeLeft: () => void; onSwipeRight: () => void; onClick?: (e: React.MouseEvent) => void }) {
   const x = useMotionValue(0)
   const rotate = useTransform(x, [-200, 200], [-15, 15])
 
@@ -91,6 +89,7 @@ function ViewCard({ sign, onSwipeLeft, onSwipeRight }: { sign: Sign; onSwipeLeft
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
+      onClick={onClick}
       className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing select-none"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
