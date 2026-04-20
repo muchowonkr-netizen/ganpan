@@ -17,12 +17,17 @@ export default function SwipeFeed() {
   useEffect(() => { loadFeed() }, [])
 
   async function loadFeed() {
-    const { data } = await supabase
-      .from('signs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50)
-    setSigns(data ?? [])
+    const [{ data: popular }, { data: newest }] = await Promise.all([
+      supabase.from('signs').select('*').order('like_count', { ascending: false }).limit(30),
+      supabase.from('signs').select('*').order('created_at', { ascending: false }).limit(30),
+    ])
+    const seen = new Set<string>()
+    const merged: typeof popular = []
+    for (const s of [...(popular ?? []), ...(newest ?? [])]) {
+      if (!seen.has(s.id)) { seen.add(s.id); merged.push(s) }
+    }
+    // 인기순·최신순 섞기
+    setSigns(merged.sort(() => Math.random() - 0.5))
     setLoading(false)
   }
 
