@@ -35,13 +35,13 @@ export default function CommentSheet({ signId, onClose }: { signId: string; onCl
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative bg-zinc-900 rounded-t-3xl max-h-[75dvh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
-          <h2 className="font-bold">⭐ 슈퍼라이크 댓글</h2>
+          <h2 className="font-bold">⭐ 슈퍼라이크 한줄평</h2>
           <button onClick={onClose} className="text-zinc-400 text-xl">✕</button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-3 flex flex-col gap-3">
           {comments.length === 0 && (
-            <p className="text-zinc-500 text-sm text-center py-6">첫 댓글을 남겨보세요!</p>
+            <p className="text-zinc-500 text-sm text-center py-6">첫 한줄평을 남겨보세요!</p>
           )}
           {comments.map(c => (
             <div key={c.id} className="flex gap-3">
@@ -60,7 +60,7 @@ export default function CommentSheet({ signId, onClose }: { signId: string; onCl
           <input
             value={text}
             onChange={e => setText(e.target.value)}
-            placeholder="익명으로 댓글 달기..."
+            placeholder="익명으로 한줄평 달기..."
             className="flex-1 bg-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none"
           />
           <button type="submit" disabled={loading || !text.trim()} className="px-4 py-2 bg-yellow-400 text-black rounded-xl text-sm font-bold disabled:opacity-40">
