@@ -87,7 +87,7 @@ export default function SwipeFeed() {
         <h1 className="text-xl font-black text-gray-900">간판을 좋아하세요...</h1>
         <Link
           href="/"
-          className="w-12 h-12 bg-white text-black text-xl flex items-center justify-center font-bold border-2 border-black active:scale-95 transition-transform"
+          className="w-12 h-12 bg-white text-black text-xl flex items-center justify-center font-bold border border-black active:scale-95 transition-transform"
           aria-label="인기간판"
         >
           🔍
