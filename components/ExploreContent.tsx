@@ -38,6 +38,7 @@ export default function ExploreContent() {
   const [leftCol, setLeftCol] = useState<Sign[]>([])
   const [rightCol, setRightCol] = useState<Sign[]>([])
   const [loading, setLoading] = useState(true)
+  const [allLoaded, setAllLoaded] = useState(false)
   const [commentSign, setCommentSign] = useState<string | null>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
 
@@ -74,6 +75,7 @@ export default function ExploreContent() {
     renderedCountRef.current = firstBatch.length
     setLeftCol(left)
     setRightCol(right)
+    setAllLoaded(firstBatch.length >= shuffled.length)
     setLoading(false)
   }
 
@@ -89,9 +91,11 @@ export default function ExploreContent() {
     )
     leftHRef.current = leftH
     rightHRef.current = rightH
-    renderedCountRef.current = count + batch.length
+    const newCount = count + batch.length
+    renderedCountRef.current = newCount
     setLeftCol(prev => [...prev, ...left])
     setRightCol(prev => [...prev, ...right])
+    setAllLoaded(newCount >= all.length)
     loadingMoreRef.current = false
   }
 
@@ -146,7 +150,10 @@ export default function ExploreContent() {
                 ))}
               </div>
             </div>
-            <div ref={sentinelRef} className="h-12" />
+            <div ref={sentinelRef} className="h-4" />
+            {allLoaded && (
+              <p className="text-center text-xs text-zinc-400 py-6">마지막 간판까지 확인했어요…</p>
+            )}
           </>
         )}
       </div>
