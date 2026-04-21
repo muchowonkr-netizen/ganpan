@@ -54,7 +54,7 @@ export default function ExploreContent() {
           </div>
         ) : (
           <>
-            <div className="columns-2 gap-0.5">
+            <div className="columns-2 gap-0.5 animate-fade-in-up">
               {signs.map((sign) => (
                 <div key={sign.id} className="break-inside-avoid mb-0.5">
                   <SignTile sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
