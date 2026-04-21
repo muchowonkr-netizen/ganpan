@@ -79,7 +79,7 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
 
           <input
             type="text"
-            placeholder="한줄평을 남겨보세요…"
+            placeholder="한줄평을 남겨보세요… (선택)"
             value={caption}
             onChange={e => setCaption(e.target.value)}
             maxLength={100}
