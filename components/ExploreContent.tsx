@@ -7,14 +7,45 @@ import CommentSheet from './CommentSheet'
 import SignViewer from './SignViewer'
 import Link from 'next/link'
 
-const PAGE_SIZE = 20
+const BATCH_SIZE = 20
+
+function getAspectRatio(url: string): Promise<number> {
+  return new Promise(resolve => {
+    const img = new window.Image()
+    img.onload = () => resolve(img.naturalHeight / img.naturalWidth)
+    img.onerror = () => resolve(1)
+    img.src = url
+  })
+}
+
+async function distributeToColumns(
+  signs: Sign[],
+  leftH: number,
+  rightH: number
+): Promise<{ left: Sign[]; right: Sign[]; leftH: number; rightH: number }> {
+  const ratios = await Promise.all(signs.map(s => getAspectRatio(s.image_url)))
+  const left: Sign[] = []
+  const right: Sign[] = []
+  signs.forEach((sign, i) => {
+    if (leftH <= rightH) { left.push(sign); leftH += ratios[i] }
+    else { right.push(sign); rightH += ratios[i] }
+  })
+  return { left, right, leftH, rightH }
+}
 
 export default function ExploreContent() {
-  const [signs, setSigns] = useState<Sign[]>([])
+  const [allSigns, setAllSigns] = useState<Sign[]>([])
+  const [leftCol, setLeftCol] = useState<Sign[]>([])
+  const [rightCol, setRightCol] = useState<Sign[]>([])
   const [loading, setLoading] = useState(true)
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [commentSign, setCommentSign] = useState<string | null>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
+
+  const leftHRef = useRef(0)
+  const rightHRef = useRef(0)
+  const renderedCountRef = useRef(0)
+  const loadingMoreRef = useRef(false)
+  const allSignsRef = useRef<Sign[]>([])
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   async function loadFeed() {
@@ -28,9 +59,40 @@ export default function ExploreContent() {
     for (const s of [...(popular ?? []), ...(newest ?? [])]) {
       if (!seen.has(s.id)) { seen.add(s.id); merged.push(s) }
     }
-    setSigns(merged.sort(() => Math.random() - 0.5))
-    setVisibleCount(PAGE_SIZE)
+    const shuffled = merged.sort(() => Math.random() - 0.5)
+    allSignsRef.current = shuffled
+    setAllSigns(shuffled)
+
+    leftHRef.current = 0
+    rightHRef.current = 0
+    renderedCountRef.current = 0
+
+    const firstBatch = shuffled.slice(0, BATCH_SIZE)
+    const { left, right, leftH, rightH } = await distributeToColumns(firstBatch, 0, 0)
+    leftHRef.current = leftH
+    rightHRef.current = rightH
+    renderedCountRef.current = firstBatch.length
+    setLeftCol(left)
+    setRightCol(right)
     setLoading(false)
+  }
+
+  async function loadMore() {
+    if (loadingMoreRef.current) return
+    const all = allSignsRef.current
+    const count = renderedCountRef.current
+    if (count >= all.length) return
+    loadingMoreRef.current = true
+    const batch = all.slice(count, count + BATCH_SIZE)
+    const { left, right, leftH, rightH } = await distributeToColumns(
+      batch, leftHRef.current, rightHRef.current
+    )
+    leftHRef.current = leftH
+    rightHRef.current = rightH
+    renderedCountRef.current = count + batch.length
+    setLeftCol(prev => [...prev, ...left])
+    setRightCol(prev => [...prev, ...right])
+    loadingMoreRef.current = false
   }
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -38,17 +100,14 @@ export default function ExploreContent() {
 
   useEffect(() => {
     const sentinel = sentinelRef.current
-    if (!sentinel) return
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) {
-        setVisibleCount(c => c + PAGE_SIZE)
-      }
-    }, { rootMargin: '200px' })
+    if (!sentinel || loading) return
+    const observer = new IntersectionObserver(
+      entries => { if (entries[0].isIntersecting) void loadMore() },
+      { rootMargin: '300px' }
+    )
     observer.observe(sentinel)
     return () => observer.disconnect()
   }, [loading])
-
-  const visible = signs.slice(0, visibleCount)
 
   return (
     <div className="pt-4">
@@ -66,19 +125,26 @@ export default function ExploreContent() {
       <div className="px-4">
         {loading ? (
           <div className="flex items-center justify-center py-20 text-sm text-zinc-500">잠시만 기다려 주세요…</div>
-        ) : signs.length === 0 ? (
+        ) : leftCol.length === 0 && rightCol.length === 0 ? (
           <div className="flex flex-col items-center py-16 gap-3 text-zinc-600">
             <span className="text-4xl">🪧</span>
             <p className="text-sm">간판이 없어요</p>
           </div>
         ) : (
           <>
-            <div className="columns-2 gap-0.5 animate-fade-in-up">
-              {visible.map((sign) => (
-                <div key={sign.id} className="break-inside-avoid mb-0.5">
-                  <SignTile sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
-                </div>
-              ))}
+            <div className="flex gap-0.5 animate-fade-in-up">
+              <div className="flex-1 flex flex-col gap-0.5">
+                {leftCol.map(sign => (
+                  <SignTile key={sign.id} sign={sign}
+                    onOpen={() => setViewerIndex(allSigns.findIndex(s => s.id === sign.id))} />
+                ))}
+              </div>
+              <div className="flex-1 flex flex-col gap-0.5">
+                {rightCol.map(sign => (
+                  <SignTile key={sign.id} sign={sign}
+                    onOpen={() => setViewerIndex(allSigns.findIndex(s => s.id === sign.id))} />
+                ))}
+              </div>
             </div>
             <div ref={sentinelRef} className="h-12" />
           </>
@@ -87,7 +153,7 @@ export default function ExploreContent() {
 
       {commentSign && <CommentSheet signId={commentSign} onClose={() => setCommentSign(null)} />}
       {viewerIndex !== null && (
-        <SignViewer signs={signs} startIndex={viewerIndex} onClose={() => setViewerIndex(null)} />
+        <SignViewer signs={allSigns} startIndex={viewerIndex} onClose={() => setViewerIndex(null)} />
       )}
     </div>
   )
