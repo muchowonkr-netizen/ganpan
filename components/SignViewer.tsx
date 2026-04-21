@@ -68,11 +68,11 @@ export default function SignViewer({ signs, startIndex, onClose }: {
         {previewComment && (
           <button
             onClick={e => { e.stopPropagation(); setShowComments(true) }}
-            className="w-full text-left px-3 py-2.5 bg-zinc-900 active:bg-zinc-800 transition-colors"
+            className="w-full text-left px-3 py-2.5 bg-white/90 active:bg-white transition-colors"
           >
             <div className="flex items-start gap-2">
-              <span className="text-zinc-500 text-xs mt-0.5">💬</span>
-              <p className="text-sm text-zinc-300 flex-1 line-clamp-2">{previewComment.content}</p>
+              <span className="text-gray-400 text-xs mt-0.5">💬</span>
+              <p className="text-sm text-gray-700 flex-1 line-clamp-2">{previewComment.content}</p>
             </div>
           </button>
         )}

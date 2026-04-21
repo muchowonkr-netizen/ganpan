@@ -70,7 +70,7 @@ export default function SwipeFeed() {
     return (
       <div className="flex flex-col items-center justify-center min-h-dvh gap-4">
         <p className="text-lg font-bold">간판여행을 모두 마쳤습니다…</p>
-        <button onClick={() => { setIndex(0); setDone(false); void loadFeed() }} className="px-6 py-2 bg-yellow-400 text-black font-bold text-sm">
+        <button onClick={() => { setIndex(0); setDone(false); void loadFeed() }} className="px-6 py-2 bg-[#6A7BA2] text-white font-bold text-sm">
           처음부터 다시 볼게요…
         </button>
       </div>
@@ -84,10 +84,10 @@ export default function SwipeFeed() {
   return (
     <div className="flex flex-col h-dvh">
       <header className="w-full flex items-center justify-between px-4 py-3 flex-shrink-0">
-        <h1 className="text-xl font-black text-white">간판을 좋아하세요...</h1>
+        <h1 className="text-xl font-black text-gray-900">간판을 좋아하세요...</h1>
         <Link
           href="/"
-          className="w-9 h-9 bg-zinc-800 text-zinc-200 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
+          className="w-9 h-9 bg-gray-100 text-gray-700 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
           aria-label="인기간판"
         >
           🔍
