@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import type { Sign, Comment } from '@/types'
 import CommentSheet from './CommentSheet'
@@ -62,7 +61,7 @@ export default function SignViewer({ signs, startIndex, onClose }: {
 
       <div className="flex-1 flex flex-col items-center px-4 gap-4 overflow-hidden">
         {current && (
-          <ViewCard sign={current} onSwipeLeft={goNext} onSwipeRight={goPrev} onClick={e => e.stopPropagation()} />
+          <ViewCard sign={current} onClick={e => e.stopPropagation()} />
         )}
 
         {previewComment && (
@@ -85,24 +84,11 @@ export default function SignViewer({ signs, startIndex, onClose }: {
   )
 }
 
-function ViewCard({ sign, onSwipeLeft, onSwipeRight, onClick }: { sign: Sign; onSwipeLeft: () => void; onSwipeRight: () => void; onClick?: (e: React.MouseEvent) => void }) {
-  const x = useMotionValue(0)
-  const rotate = useTransform(x, [-200, 200], [-15, 15])
-
-  function handleDragEnd(_: unknown, info: { offset: { x: number } }) {
-    if (info.offset.x > 100) animate(x, 500, { duration: 0.3 }).then(onSwipeRight)
-    else if (info.offset.x < -100) animate(x, -500, { duration: 0.3 }).then(onSwipeLeft)
-    else animate(x, 0, { type: 'spring', stiffness: 300, damping: 20 })
-  }
-
+function ViewCard({ sign, onClick }: { sign: Sign; onClick?: (e: React.MouseEvent) => void }) {
   return (
-    <motion.div
-      style={{ x, rotate }}
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      onDragEnd={handleDragEnd}
+    <div
       onClick={onClick}
-      className="relative w-full aspect-[3/4] overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing select-none"
+      className="relative w-full aspect-[3/4] overflow-hidden shadow-2xl select-none"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sign.image_url} aria-hidden alt="" className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-80" draggable={false} />
@@ -115,6 +101,6 @@ function ViewCard({ sign, onSwipeLeft, onSwipeRight, onClick }: { sign: Sign; on
           {sign.location_name && <p className="text-sm text-zinc-300 mt-1">📍 {sign.location_name}</p>}
         </div>
       )}
-    </motion.div>
+    </div>
   )
 }
