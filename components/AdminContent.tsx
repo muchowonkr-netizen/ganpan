@@ -21,6 +21,11 @@ export default function AdminContent() {
   const [previewSign, setPreviewSign] = useState<Sign | null>(null)
   const [previewComments, setPreviewComments] = useState<Comment[]>([])
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null)
+  const [newComment, setNewComment] = useState('')
+  const [submittingComment, setSubmittingComment] = useState(false)
+  const [activeTab, setActiveTab] = useState<'signs' | 'comments'>('signs')
+  const [allComments, setAllComments] = useState<(Comment & { signs: { image_url: string; caption: string | null } | null })[]>([])
+  const [commentsLoading, setCommentsLoading] = useState(false)
   const bulkRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -126,6 +131,7 @@ export default function AdminContent() {
 
   async function openPreview(sign: Sign) {
     setPreviewSign(sign)
+    setNewComment('')
     const { data } = await supabase.from('comments').select('*').eq('sign_id', sign.id).order('created_at', { ascending: true })
     setPreviewComments((data as Comment[]) ?? [])
   }
@@ -134,7 +140,28 @@ export default function AdminContent() {
     setDeletingCommentId(commentId)
     await supabase.from('comments').delete().eq('id', commentId)
     setPreviewComments(prev => prev.filter(c => c.id !== commentId))
+    setAllComments(prev => prev.filter(c => c.id !== commentId))
     setDeletingCommentId(null)
+  }
+
+  async function handleSubmitComment(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newComment.trim() || !previewSign) return
+    setSubmittingComment(true)
+    const { data } = await supabase.from('comments').insert({ sign_id: previewSign.id, content: newComment.trim() }).select().single()
+    if (data) setPreviewComments(prev => [...prev, data as Comment])
+    setNewComment('')
+    setSubmittingComment(false)
+  }
+
+  async function loadAllComments() {
+    setCommentsLoading(true)
+    const { data } = await supabase
+      .from('comments')
+      .select('*, signs(image_url, caption)')
+      .order('created_at', { ascending: false })
+    setAllComments((data ?? []) as (Comment & { signs: { image_url: string; caption: string | null } | null })[])
+    setCommentsLoading(false)
   }
 
   async function handleLogout() {
@@ -169,26 +196,75 @@ export default function AdminContent() {
     <div className="px-4 pt-4 pb-8">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-black text-yellow-400">🛠 관리자</h1>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-500">총 {signs.length}개</span>
-          <button onClick={handleLogout} className="text-xs text-zinc-500 px-3 py-1.5 rounded-lg bg-zinc-800">로그아웃</button>
-        </div>
+        <button onClick={handleLogout} className="text-xs text-zinc-500 px-3 py-1.5 rounded-lg bg-zinc-800">로그아웃</button>
       </div>
 
+      {/* 탭 */}
+      <div className="flex gap-1 mb-4 bg-zinc-800 rounded-xl p-1">
+        <button
+          onClick={() => setActiveTab('signs')}
+          className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${activeTab === 'signs' ? 'bg-zinc-600 text-white' : 'text-zinc-400'}`}
+        >
+          간판 {signs.length > 0 && `(${signs.length})`}
+        </button>
+        <button
+          onClick={() => { setActiveTab('comments'); if (allComments.length === 0) void loadAllComments() }}
+          className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${activeTab === 'comments' ? 'bg-zinc-600 text-white' : 'text-zinc-400'}`}
+        >
+          한줄평
+        </button>
+      </div>
+
+      {/* 한줄평 탭 */}
+      {activeTab === 'comments' && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-zinc-400">최신순 · {allComments.length}개</span>
+            <button onClick={() => void loadAllComments()} className="text-xs text-zinc-500 px-2 py-1 bg-zinc-800 rounded-lg">새로고침</button>
+          </div>
+          {commentsLoading ? (
+            <div className="flex items-center justify-center py-16 text-zinc-500 text-sm">불러오는 중…</div>
+          ) : allComments.length === 0 ? (
+            <div className="flex items-center justify-center py-16 text-zinc-500 text-sm">한줄평이 없어요</div>
+          ) : (
+            allComments.map(c => (
+              <div key={c.id} className="flex gap-3 bg-zinc-800 rounded-xl p-3">
+                {c.signs?.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={c.signs.image_url} alt="" className="w-14 h-14 object-cover rounded-lg flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  {c.signs?.caption && <p className="text-xs text-zinc-400 truncate mb-0.5">{c.signs.caption}</p>}
+                  <p className="text-sm text-white">{c.content}</p>
+                  <p className="text-[10px] text-zinc-500 mt-1">{new Date(c.created_at).toLocaleString('ko-KR')}</p>
+                </div>
+                <button
+                  onClick={() => void handleDeleteComment(c.id)}
+                  disabled={deletingCommentId === c.id}
+                  className="text-red-400 text-xs font-bold self-start flex-shrink-0 disabled:opacity-40"
+                >
+                  {deletingCommentId === c.id ? '...' : '삭제'}
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
       {/* 업로드 */}
-      <button onClick={() => bulkRef.current?.click()} disabled={bulkProgress !== null}
+      {activeTab === 'signs' && <button onClick={() => bulkRef.current?.click()} disabled={bulkProgress !== null}
         className="w-full py-3 mb-2 rounded-xl bg-zinc-800 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
         {bulkProgress ? `업로드 중... ${bulkProgress.done} / ${bulkProgress.total}` : '📁 사진 여러 장 올리기'}
-      </button>
+      </button>}
       <input ref={bulkRef} type="file" accept="image/*" multiple className="hidden" onChange={handleBulkUpload} />
-      {bulkProgress && (
+      {activeTab === 'signs' && bulkProgress && (
         <div className="w-full bg-zinc-800 rounded-full h-2 mb-3">
           <div className="bg-yellow-400 h-2 rounded-full transition-all" style={{ width: `${(bulkProgress.done / bulkProgress.total) * 100}%` }} />
         </div>
       )}
 
       {/* 선택 삭제 툴바 */}
-      <div className="flex gap-2 mb-4">
+      {activeTab === 'signs' && <div className="flex gap-2 mb-4">
         <button
           onClick={() => { setSelectMode(v => !v); setSelected(new Set()) }}
           className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${selectMode ? 'bg-zinc-600 text-white' : 'bg-zinc-800 text-zinc-400'}`}>
@@ -206,7 +282,7 @@ export default function AdminContent() {
             </button>
           </>
         )}
-      </div>
+      </div>}
 
       {previewSign && (
         <div className="fixed inset-0 z-50 bg-black/80 flex flex-col" onClick={() => setPreviewSign(null)}>
@@ -247,14 +323,26 @@ export default function AdminContent() {
                   ))}
                 </div>
               )}
+              <form onSubmit={e => { void handleSubmitComment(e) }} className="flex gap-2 mt-3">
+                <input
+                  value={newComment}
+                  onChange={e => setNewComment(e.target.value)}
+                  placeholder="익명으로 한줄평 달기..."
+                  className="flex-1 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none rounded-lg"
+                />
+                <button type="submit" disabled={submittingComment || !newComment.trim()}
+                  className="px-3 py-2 bg-zinc-600 text-white text-sm font-bold rounded-lg disabled:opacity-40">
+                  {submittingComment ? '...' : '등록'}
+                </button>
+              </form>
             </div>
           </div>
         </div>
       )}
 
-      {loading ? (
+      {activeTab === 'signs' && loading ? (
         <div className="flex items-center justify-center py-20 text-3xl animate-pulse">🪧</div>
-      ) : (
+      ) : activeTab === 'signs' && (
         <div className="grid grid-cols-2 gap-2">
           {signs.map(sign => (
             <div key={sign.id}
@@ -293,3 +381,4 @@ export default function AdminContent() {
     </div>
   )
 }
+
