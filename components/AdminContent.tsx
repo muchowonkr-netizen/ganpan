@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { Sign } from '@/types'
+import type { Sign, Comment } from '@/types'
 import { compressImage } from '@/lib/compressImage'
 
 export default function AdminContent() {
@@ -19,6 +19,8 @@ export default function AdminContent() {
   const [selectMode, setSelectMode] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [previewSign, setPreviewSign] = useState<Sign | null>(null)
+  const [previewComments, setPreviewComments] = useState<Comment[]>([])
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null)
   const bulkRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -122,6 +124,19 @@ export default function AdminContent() {
     await loadSigns()
   }
 
+  async function openPreview(sign: Sign) {
+    setPreviewSign(sign)
+    const { data } = await supabase.from('comments').select('*').eq('sign_id', sign.id).order('created_at', { ascending: true })
+    setPreviewComments((data as Comment[]) ?? [])
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    setDeletingCommentId(commentId)
+    await supabase.from('comments').delete().eq('id', commentId)
+    setPreviewComments(prev => prev.filter(c => c.id !== commentId))
+    setDeletingCommentId(null)
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut()
     setLoggedIn(false)
@@ -205,12 +220,33 @@ export default function AdminContent() {
               {deletingId === previewSign.id ? '삭제 중...' : '삭제'}
             </button>
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center px-4 gap-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="flex-1 flex flex-col px-4 gap-4 overflow-y-auto py-4" onClick={e => e.stopPropagation()}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={previewSign.image_url} alt={previewSign.caption ?? ''} className="max-w-full max-h-full object-contain" />
+            <img src={previewSign.image_url} alt={previewSign.caption ?? ''} className="w-full object-contain max-h-64" />
             <div className="text-center">
               {previewSign.caption && <p className="text-white font-bold">{previewSign.caption}</p>}
               <p className="text-zinc-400 text-sm mt-1">♥ {previewSign.like_count} · {new Date(previewSign.created_at).toLocaleDateString('ko-KR')}</p>
+            </div>
+            <div className="border-t border-zinc-700 pt-3">
+              <p className="text-zinc-400 text-xs mb-2">한줄평 {previewComments.length}개</p>
+              {previewComments.length === 0 ? (
+                <p className="text-zinc-600 text-sm text-center py-3">한줄평이 없어요</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {previewComments.map(c => (
+                    <div key={c.id} className="flex items-start justify-between gap-2 bg-zinc-800 rounded-lg px-3 py-2">
+                      <p className="text-sm text-zinc-200 flex-1">{c.content}</p>
+                      <button
+                        onClick={() => { void handleDeleteComment(c.id) }}
+                        disabled={deletingCommentId === c.id}
+                        className="text-red-400 text-xs font-bold disabled:opacity-40 flex-shrink-0"
+                      >
+                        {deletingCommentId === c.id ? '...' : '삭제'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -222,7 +258,7 @@ export default function AdminContent() {
         <div className="grid grid-cols-2 gap-2">
           {signs.map(sign => (
             <div key={sign.id}
-              onClick={selectMode ? () => toggleSelect(sign.id) : () => setPreviewSign(sign)}
+              onClick={selectMode ? () => toggleSelect(sign.id) : () => { void openPreview(sign) }}
               className={`relative rounded-2xl overflow-hidden aspect-square bg-zinc-900 cursor-pointer`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-full object-cover" />
