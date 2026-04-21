@@ -3,17 +3,17 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: '간판을 좋아하세요...',
-  description: '진짜들의 간판을 찾아서',
+  description: 'I love ganpan',
   openGraph: {
     title: '간판을 좋아하세요...',
-    description: '진짜들의 간판을 찾아서',
+    description: 'I love ganpan',
     images: ['https://kfuwqtwiyqubjuvxsdek.supabase.co/storage/v1/object/public/signs/signs/og-image.jpg'],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: '간판을 좋아하세요...',
-    description: '진짜들의 간판을 찾아서',
+    description: 'I love ganpan',
     images: ['https://kfuwqtwiyqubjuvxsdek.supabase.co/storage/v1/object/public/signs/signs/og-image.jpg'],
   },
 }
