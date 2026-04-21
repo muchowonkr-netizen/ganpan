@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://ganpanlover.vercel.app'),
   title: '간판을 좋아하세요...',
   description: '간판... 보러 가실래요?',
   openGraph: {
