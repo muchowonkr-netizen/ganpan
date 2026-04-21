@@ -148,7 +148,8 @@ export default function AdminContent() {
     e.preventDefault()
     if (!newComment.trim() || !previewSign) return
     setSubmittingComment(true)
-    const { data } = await supabase.from('comments').insert({ sign_id: previewSign.id, content: newComment.trim() }).select().single()
+    const { data, error } = await supabase.from('comments').insert({ sign_id: previewSign.id, content: newComment.trim() }).select().single()
+    if (error) { alert('등록 실패: ' + error.message); setSubmittingComment(false); return }
     if (data) setPreviewComments(prev => [...prev, data as Comment])
     setNewComment('')
     setSubmittingComment(false)
