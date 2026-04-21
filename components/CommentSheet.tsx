@@ -61,9 +61,9 @@ export default function CommentSheet({ signId, onClose, readOnly }: { signId: st
               value={text}
               onChange={e => setText(e.target.value)}
               placeholder="익명으로 한줄평 달기..."
-              className="flex-1 bg-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none"
+              className="flex-1 bg-zinc-800  px-4 py-2 text-sm focus:outline-none"
             />
-            <button type="submit" disabled={loading || !text.trim()} className="px-4 py-2 bg-yellow-400 text-black rounded-xl text-sm font-bold disabled:opacity-40">
+            <button type="submit" disabled={loading || !text.trim()} className="px-4 py-2 bg-yellow-400 text-black  text-sm font-bold disabled:opacity-40">
               전송
             </button>
           </form>

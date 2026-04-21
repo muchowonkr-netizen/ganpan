@@ -60,10 +60,10 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-5 overflow-y-auto">
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={preview} alt="미리보기" className="w-full aspect-square object-cover rounded-2xl" />
+            <img src={preview} alt="미리보기" className="w-full aspect-square object-cover " />
           ) : (
             <button type="button" onClick={() => fileRef.current?.click()}
-              className="w-full aspect-square rounded-2xl border-2 border-dashed border-zinc-700 flex flex-col items-center justify-center gap-2 text-zinc-500">
+              className="w-full aspect-square  border-2 border-dashed border-zinc-700 flex flex-col items-center justify-center gap-2 text-zinc-500">
               <span className="text-4xl">🪧</span>
               <span className="text-sm">사진 선택</span>
             </button>
@@ -84,11 +84,11 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
             value={caption}
             onChange={e => setCaption(e.target.value)}
             maxLength={100}
-            className="w-full px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm"
+            className="w-full px-4 py-3  bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm"
           />
 
           <button type="submit" disabled={!file || uploading}
-            className="w-full py-3 rounded-xl bg-yellow-400 text-black font-bold disabled:opacity-40">
+            className="w-full py-3  bg-yellow-400 text-black font-bold disabled:opacity-40">
             {uploading ? '업로드 중...' : '제보하기'}
           </button>
 

@@ -37,14 +37,14 @@ export default function ExploreContent() {
         <h1 className="text-xl font-black text-white">간판을 좋아하세요...</h1>
         <Link
           href="/explore"
-          className="w-9 h-9 rounded-full bg-zinc-800 text-zinc-200 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
+          className="w-9 h-9 bg-zinc-800 text-zinc-200 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
           aria-label="간판여행"
         >
           🍀
         </Link>
       </div>
 
-      <div>
+      <div className="px-4">
         {loading ? (
           <div className="flex items-center justify-center py-20 text-sm text-zinc-500">잠시만 기다려 주세요…</div>
         ) : signs.length === 0 ? (

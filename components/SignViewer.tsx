@@ -68,7 +68,7 @@ export default function SignViewer({ signs, startIndex, onClose }: {
         {previewComment && (
           <button
             onClick={e => { e.stopPropagation(); setShowComments(true) }}
-            className="w-full text-left px-3 py-2.5 rounded-xl bg-zinc-900 active:bg-zinc-800 transition-colors"
+            className="w-full text-left px-3 py-2.5 bg-zinc-900 active:bg-zinc-800 transition-colors"
           >
             <div className="flex items-start gap-2">
               <span className="text-zinc-500 text-xs mt-0.5">💬</span>
@@ -102,7 +102,7 @@ function ViewCard({ sign, onSwipeLeft, onSwipeRight, onClick }: { sign: Sign; on
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
       onClick={onClick}
-      className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing select-none"
+      className="relative w-full aspect-[3/4] overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing select-none"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sign.image_url} aria-hidden alt="" className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-80" draggable={false} />
