@@ -54,17 +54,12 @@ export default function ExploreContent() {
           </div>
         ) : (
           <>
-            <div className="flex gap-0.5">
-              <div className="flex-1 flex flex-col gap-0.5">
-                {signs.filter((_, i) => i % 2 === 0).map((sign) => (
-                  <SignTile key={sign.id} sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
-                ))}
-              </div>
-              <div className="flex-1 flex flex-col gap-0.5">
-                {signs.filter((_, i) => i % 2 === 1).map((sign) => (
-                  <SignTile key={sign.id} sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
-                ))}
-              </div>
+            <div className="columns-2 gap-0.5">
+              {signs.map((sign) => (
+                <div key={sign.id} className="break-inside-avoid mb-0.5">
+                  <SignTile sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
+                </div>
+              ))}
             </div>
             <div className="h-12" />
           </>
