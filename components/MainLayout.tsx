@@ -37,8 +37,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </>
       )}
       {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-white text-black text-sm font-medium px-5 py-3 border border-black shadow-lg whitespace-nowrap animate-fade-in">
-          ✨ 제보 감사합니다…
+        <div className="fixed bottom-24 left-0 right-0 flex justify-center z-50 animate-fade-in">
+          <div className="bg-white text-black text-sm font-medium px-5 py-3 border border-black shadow-lg whitespace-nowrap">
+            ✨ 제보 감사합니다…
+          </div>
         </div>
       )}
     </div>
