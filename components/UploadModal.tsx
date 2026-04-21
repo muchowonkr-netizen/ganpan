@@ -63,9 +63,8 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
             <img src={preview} alt="미리보기" className="w-full aspect-square object-cover" />
           ) : (
             <button type="button" onClick={() => fileRef.current?.click()}
-              className="w-full aspect-square border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-2 text-gray-400">
-              <span className="text-4xl">🪧</span>
-              <span className="text-sm">사진 선택</span>
+              className="w-full aspect-square border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400">
+              <span className="text-2xl">사진 선택</span>
             </button>
           )}
 
