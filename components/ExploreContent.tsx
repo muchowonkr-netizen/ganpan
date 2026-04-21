@@ -37,7 +37,7 @@ export default function ExploreContent() {
         <h1 className="text-xl font-black text-gray-900">간판을 좋아하세요...</h1>
         <Link
           href="/explore"
-          className="w-9 h-9 bg-gray-100 text-gray-700 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
+          className="w-12 h-12 bg-white text-black text-xl flex items-center justify-center font-bold border-2 border-black active:scale-95 transition-transform"
           aria-label="간판여행"
         >
           🍀
@@ -54,17 +54,12 @@ export default function ExploreContent() {
           </div>
         ) : (
           <>
-            <div className="flex gap-0.5">
-              <div className="flex-1 flex flex-col gap-0.5">
-                {signs.filter((_, i) => i % 2 === 0).map((sign) => (
-                  <SignTile key={sign.id} sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
-                ))}
-              </div>
-              <div className="flex-1 flex flex-col gap-0.5">
-                {signs.filter((_, i) => i % 2 === 1).map((sign) => (
-                  <SignTile key={sign.id} sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
-                ))}
-              </div>
+            <div className="columns-2 gap-0.5">
+              {signs.map((sign) => (
+                <div key={sign.id} className="break-inside-avoid mb-0.5">
+                  <SignTile sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
+                </div>
+              ))}
             </div>
             <div className="h-12" />
           </>

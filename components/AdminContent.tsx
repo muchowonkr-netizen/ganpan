@@ -18,6 +18,7 @@ export default function AdminContent() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [selectMode, setSelectMode] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [previewSign, setPreviewSign] = useState<Sign | null>(null)
   const bulkRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -25,6 +26,30 @@ export default function AdminContent() {
       if (data.session) { setLoggedIn(true); loadSigns() }
     })
   }, [])
+
+  useEffect(() => {
+    if (!loggedIn) return
+
+    if (Notification.permission === 'default') {
+      void Notification.requestPermission()
+    }
+
+    const channel = supabase
+      .channel('new-signs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signs' }, payload => {
+        const sign = payload.new as { caption?: string }
+        if (Notification.permission === 'granted') {
+          new Notification('📸 새 간판 제보!', {
+            body: sign.caption ?? '캡션 없음',
+            icon: '/icon-192.png',
+          })
+        }
+        void loadSigns()
+      })
+      .subscribe()
+
+    return () => { void supabase.removeChannel(channel) }
+  }, [loggedIn])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -168,14 +193,37 @@ export default function AdminContent() {
         )}
       </div>
 
+      {previewSign && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex flex-col" onClick={() => setPreviewSign(null)}>
+          <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
+            <button className="text-white text-2xl w-10 h-10 flex items-center justify-center">✕</button>
+            <button
+              onClick={e => { e.stopPropagation(); void handleDelete(previewSign); setPreviewSign(null) }}
+              disabled={deletingId === previewSign.id}
+              className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg disabled:opacity-40"
+            >
+              {deletingId === previewSign.id ? '삭제 중...' : '삭제'}
+            </button>
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center px-4 gap-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={previewSign.image_url} alt={previewSign.caption ?? ''} className="max-w-full max-h-full object-contain" />
+            <div className="text-center">
+              {previewSign.caption && <p className="text-white font-bold">{previewSign.caption}</p>}
+              <p className="text-zinc-400 text-sm mt-1">♥ {previewSign.like_count} · {new Date(previewSign.created_at).toLocaleDateString('ko-KR')}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-20 text-3xl animate-pulse">🪧</div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
           {signs.map(sign => (
             <div key={sign.id}
-              onClick={selectMode ? () => toggleSelect(sign.id) : undefined}
-              className={`relative rounded-2xl overflow-hidden aspect-square bg-zinc-900 ${selectMode ? 'cursor-pointer' : ''}`}>
+              onClick={selectMode ? () => toggleSelect(sign.id) : () => setPreviewSign(sign)}
+              className={`relative rounded-2xl overflow-hidden aspect-square bg-zinc-900 cursor-pointer`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-full object-cover" />
 

@@ -87,7 +87,7 @@ export default function SwipeFeed() {
         <h1 className="text-xl font-black text-gray-900">간판을 좋아하세요...</h1>
         <Link
           href="/"
-          className="w-9 h-9 bg-gray-100 text-gray-700 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
+          className="w-12 h-12 bg-white text-black text-xl flex items-center justify-center font-bold border-2 border-black active:scale-95 transition-transform"
           aria-label="인기간판"
         >
           🔍
@@ -103,13 +103,13 @@ export default function SwipeFeed() {
         />
 
         <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-5">
-          <ActionButton emoji="✕" color="text-[#E8A0A0] border-[#E8A0A0] bg-black/45 backdrop-blur-sm" onClick={() => { void recordAction('dislike') }} />
+          <ActionButton emoji="✕" color="text-[#E8A0A0] border-[#E8A0A0] bg-white" onClick={() => { void recordAction('dislike') }} />
           <ActionButton
             emoji="⭐"
-            color="text-[#A0B4E8] border-[#A0B4E8] bg-black/45 backdrop-blur-sm"
+            color="text-[#A0B4E8] border-[#A0B4E8] bg-white"
             onClick={handleSuperLike}
           />
-          <ActionButton emoji="♥" color="text-[#A0D4A8] border-[#A0D4A8] bg-black/45 backdrop-blur-sm" onClick={() => { void recordAction('like') }} />
+          <ActionButton emoji="♥" color="text-[#A0D4A8] border-[#A0D4A8] bg-white" onClick={() => { void recordAction('like') }} />
         </div>
       </div>
 
