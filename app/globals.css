@@ -2,8 +2,8 @@
 @import url('https://cdn.jsdelivr.net/npm/pretendard/dist/web/static/pretendard.css');
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #ffffff;
+  --foreground: #1a1a1a;
 }
 
 body {
@@ -23,6 +23,11 @@ body {
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Prevent iOS auto-zoom on input focus (triggered when font-size < 16px) */
+input, textarea, select {
+  font-size: 16px;
+}
 
 @keyframes fade-in {
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }

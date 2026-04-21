@@ -50,20 +50,20 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-zinc-900 rounded-t-3xl max-h-[90dvh] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
-          <h2 className="font-bold">간판을 제보해 보세요…</h2>
-          <button onClick={onClose} className="text-zinc-400 text-xl">✕</button>
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-t-3xl max-h-[90dvh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+          <h2 className="font-bold text-gray-900">간판을 제보해 보세요…</h2>
+          <button onClick={onClose} className="text-gray-400 text-xl">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-5 overflow-y-auto">
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={preview} alt="미리보기" className="w-full aspect-square object-cover rounded-2xl" />
+            <img src={preview} alt="미리보기" className="w-full aspect-square object-cover" />
           ) : (
             <button type="button" onClick={() => fileRef.current?.click()}
-              className="w-full aspect-square rounded-2xl border-2 border-dashed border-zinc-700 flex flex-col items-center justify-center gap-2 text-zinc-500">
+              className="w-full aspect-square border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-2 text-gray-400">
               <span className="text-4xl">🪧</span>
               <span className="text-sm">사진 선택</span>
             </button>
@@ -73,7 +73,7 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
 
           {preview && (
             <button type="button" onClick={() => fileRef.current?.click()}
-              className="text-xs text-zinc-500 text-center">
+              className="text-xs text-gray-400 text-center">
               다른 사진 선택
             </button>
           )}
@@ -84,15 +84,13 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
             value={caption}
             onChange={e => setCaption(e.target.value)}
             maxLength={100}
-            className="w-full px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-400 text-sm"
+            className="w-full px-4 py-3 bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#6A7BA2] text-sm"
           />
 
           <button type="submit" disabled={!file || uploading}
-            className="w-full py-3 rounded-xl bg-yellow-400 text-black font-bold disabled:opacity-40">
+            className="w-full py-3 bg-[#6A7BA2] text-white font-bold disabled:opacity-40">
             {uploading ? '업로드 중...' : '제보하기'}
           </button>
-
-
         </form>
       </div>
     </div>

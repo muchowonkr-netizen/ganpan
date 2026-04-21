@@ -34,10 +34,10 @@ export default function ExploreContent() {
   return (
     <div className="pt-4">
       <div className="px-4 mb-3 flex items-center justify-between">
-        <h1 className="text-xl font-black text-white">간판을 좋아하세요...</h1>
+        <h1 className="text-xl font-black text-gray-900">간판을 좋아하세요...</h1>
         <Link
           href="/explore"
-          className="w-9 h-9 rounded-full bg-zinc-800 text-zinc-200 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
+          className="w-9 h-9 bg-gray-100 text-gray-700 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
           aria-label="간판여행"
         >
           🍀
@@ -46,7 +46,7 @@ export default function ExploreContent() {
 
       <div className="px-4">
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-3xl animate-pulse">🔥</div>
+          <div className="flex items-center justify-center py-20 text-sm text-zinc-500">잠시만 기다려 주세요…</div>
         ) : signs.length === 0 ? (
           <div className="flex flex-col items-center py-16 gap-3 text-zinc-600">
             <span className="text-4xl">🪧</span>
@@ -54,13 +54,13 @@ export default function ExploreContent() {
           </div>
         ) : (
           <>
-            <div className="flex gap-2">
-              <div className="flex-1 flex flex-col gap-2">
+            <div className="flex gap-0.5">
+              <div className="flex-1 flex flex-col gap-0.5">
                 {signs.filter((_, i) => i % 2 === 0).map((sign) => (
                   <SignTile key={sign.id} sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
                 ))}
               </div>
-              <div className="flex-1 flex flex-col gap-2">
+              <div className="flex-1 flex flex-col gap-0.5">
                 {signs.filter((_, i) => i % 2 === 1).map((sign) => (
                   <SignTile key={sign.id} sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
                 ))}
@@ -81,7 +81,7 @@ export default function ExploreContent() {
 
 function SignTile({ sign, onOpen }: { sign: Sign; onOpen: () => void }) {
   return (
-    <div className="relative rounded-2xl overflow-hidden cursor-pointer break-inside-avoid mb-2" onClick={onOpen}>
+    <div className="relative overflow-hidden cursor-pointer" onClick={onOpen}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-auto block" />
       {sign.caption && (

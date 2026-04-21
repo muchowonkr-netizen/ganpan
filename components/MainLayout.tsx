@@ -23,7 +23,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <>
           <button
             onClick={() => setShowUpload(true)}
-            className="fixed bottom-6 right-4 w-12 h-12 bg-yellow-400 text-black rounded-full text-2xl font-bold shadow-lg flex items-center justify-center z-40 active:scale-95 transition-transform"
+            className="fixed bottom-6 right-4 w-12 h-12 bg-[#6A7BA2] text-white text-2xl font-bold shadow-lg flex items-center justify-center z-40 active:scale-95 transition-transform"
             aria-label="업로드"
           >
             +
@@ -37,8 +37,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </>
       )}
       {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-zinc-800 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-lg whitespace-nowrap animate-fade-in">
-          🎉 제보 감사합니다…
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[#6A7BA2] text-white text-sm font-medium px-5 py-3 shadow-lg whitespace-nowrap animate-fade-in">
+          ✨ 제보 감사합니다…
         </div>
       )}
     </div>

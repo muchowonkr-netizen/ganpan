@@ -55,7 +55,7 @@ export default function SignViewer({ signs, startIndex, onClose }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col" onClick={onClose}>
       <div className="flex items-center px-4 py-3">
         <button onClick={onClose} className="text-zinc-300 text-2xl w-10 h-10 flex items-center justify-center">✕</button>
       </div>
@@ -68,11 +68,11 @@ export default function SignViewer({ signs, startIndex, onClose }: {
         {previewComment && (
           <button
             onClick={e => { e.stopPropagation(); setShowComments(true) }}
-            className="w-full text-left px-3 py-2.5 rounded-xl bg-zinc-900 active:bg-zinc-800 transition-colors"
+            className="w-full text-left px-3 py-2.5 bg-white/90 active:bg-white transition-colors"
           >
             <div className="flex items-start gap-2">
-              <span className="text-zinc-500 text-xs mt-0.5">💬</span>
-              <p className="text-sm text-zinc-300 flex-1 line-clamp-2">{previewComment.content}</p>
+              <span className="text-gray-400 text-xs mt-0.5">💬</span>
+              <p className="text-sm text-gray-700 flex-1 line-clamp-2">{previewComment.content}</p>
             </div>
           </button>
         )}
@@ -102,7 +102,7 @@ function ViewCard({ sign, onSwipeLeft, onSwipeRight, onClick }: { sign: Sign; on
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
       onClick={onClick}
-      className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing select-none"
+      className="relative w-full aspect-[3/4] overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing select-none"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sign.image_url} aria-hidden alt="" className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-80" draggable={false} />
