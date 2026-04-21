@@ -21,6 +21,8 @@ export default function AdminContent() {
   const [previewSign, setPreviewSign] = useState<Sign | null>(null)
   const [previewComments, setPreviewComments] = useState<Comment[]>([])
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null)
+  const [newComment, setNewComment] = useState('')
+  const [submittingComment, setSubmittingComment] = useState(false)
   const [activeTab, setActiveTab] = useState<'signs' | 'comments'>('signs')
   const [allComments, setAllComments] = useState<(Comment & { signs: { image_url: string; caption: string | null } | null })[]>([])
   const [commentsLoading, setCommentsLoading] = useState(false)
@@ -129,6 +131,7 @@ export default function AdminContent() {
 
   async function openPreview(sign: Sign) {
     setPreviewSign(sign)
+    setNewComment('')
     const { data } = await supabase.from('comments').select('*').eq('sign_id', sign.id).order('created_at', { ascending: true })
     setPreviewComments((data as Comment[]) ?? [])
   }
@@ -139,6 +142,16 @@ export default function AdminContent() {
     setPreviewComments(prev => prev.filter(c => c.id !== commentId))
     setAllComments(prev => prev.filter(c => c.id !== commentId))
     setDeletingCommentId(null)
+  }
+
+  async function handleSubmitComment(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newComment.trim() || !previewSign) return
+    setSubmittingComment(true)
+    const { data } = await supabase.from('comments').insert({ sign_id: previewSign.id, content: newComment.trim() }).select().single()
+    if (data) setPreviewComments(prev => [...prev, data as Comment])
+    setNewComment('')
+    setSubmittingComment(false)
   }
 
   async function loadAllComments() {
@@ -310,6 +323,18 @@ export default function AdminContent() {
                   ))}
                 </div>
               )}
+              <form onSubmit={e => { void handleSubmitComment(e) }} className="flex gap-2 mt-3">
+                <input
+                  value={newComment}
+                  onChange={e => setNewComment(e.target.value)}
+                  placeholder="익명으로 한줄평 달기..."
+                  className="flex-1 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none rounded-lg"
+                />
+                <button type="submit" disabled={submittingComment || !newComment.trim()}
+                  className="px-3 py-2 bg-zinc-600 text-white text-sm font-bold rounded-lg disabled:opacity-40">
+                  {submittingComment ? '...' : '등록'}
+                </button>
+              </form>
             </div>
           </div>
         </div>
