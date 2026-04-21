@@ -37,7 +37,7 @@ export default function ExploreContent() {
         <h1 className="text-xl font-black text-gray-900">간판을 좋아하세요...</h1>
         <Link
           href="/explore"
-          className="w-9 h-9 bg-gray-100 text-gray-700 text-base flex items-center justify-center font-bold active:scale-95 transition-transform"
+          className="w-9 h-9 bg-white text-black text-base flex items-center justify-center font-bold border-2 border-black active:scale-95 transition-transform"
           aria-label="간판여행"
         >
           🍀

@@ -23,7 +23,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <>
           <button
             onClick={() => setShowUpload(true)}
-            className="fixed bottom-6 right-4 w-12 h-12 bg-[#6A7BA2] text-white text-2xl font-bold shadow-lg flex items-center justify-center z-40 active:scale-95 transition-transform"
+            className="fixed bottom-6 right-4 w-12 h-12 bg-white text-black text-2xl font-bold border-2 border-black shadow-lg flex items-center justify-center z-40 active:scale-95 transition-transform"
             aria-label="업로드"
           >
             +

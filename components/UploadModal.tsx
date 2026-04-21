@@ -88,7 +88,7 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
           />
 
           <button type="submit" disabled={!file || uploading}
-            className="w-full py-3 bg-[#6A7BA2] text-white font-bold disabled:opacity-40">
+            className="w-full py-3 bg-white text-black font-bold border-2 border-black disabled:opacity-40">
             {uploading ? '업로드 중...' : '제보하기'}
           </button>
         </form>
