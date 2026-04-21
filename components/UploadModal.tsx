@@ -53,7 +53,7 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-t-3xl max-h-[90dvh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-          <h2 className="font-bold text-gray-900">간판을 제보해 보세요…</h2>
+          <h2 className="font-light text-gray-900">간판을 제보해 보세요…</h2>
           <button onClick={onClose} className="text-gray-400 text-xl">✕</button>
         </div>
 
@@ -79,7 +79,7 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
 
           <input
             type="text"
-            placeholder="한줄평을 남겨보세요…"
+            placeholder="한줄평을 남겨보세요… (선택)"
             value={caption}
             onChange={e => setCaption(e.target.value)}
             maxLength={100}

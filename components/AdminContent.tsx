@@ -243,7 +243,7 @@ export default function AdminContent() {
                 {!selectMode && (
                   <div className="flex items-center gap-1 text-xs text-white">
                     <span>♥ {sign.like_count}</span>
-                    <button onClick={() => handleDelete(sign)} disabled={deletingId === sign.id}
+                    <button onClick={e => { e.stopPropagation(); void handleDelete(sign) }} disabled={deletingId === sign.id}
                       className="ml-auto px-2 py-0.5 bg-red-500 text-white rounded-lg text-xs font-bold disabled:opacity-40 active:scale-95">
                       {deletingId === sign.id ? '...' : '삭제'}
                     </button>
