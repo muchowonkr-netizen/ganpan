@@ -8,6 +8,7 @@ export default function CommentSheet({ signId, onClose, readOnly }: { signId: st
   const [comments, setComments] = useState<Comment[]>([])
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => { loadComments() }, [signId])
 
@@ -26,7 +27,8 @@ export default function CommentSheet({ signId, onClose, readOnly }: { signId: st
     setLoading(true)
     await supabase.from('comments').insert({ sign_id: signId, content: text.trim() })
     setLoading(false)
-    onClose()
+    setSubmitted(true)
+    setTimeout(onClose, 1500)
   }
 
   return (
@@ -56,17 +58,23 @@ export default function CommentSheet({ signId, onClose, readOnly }: { signId: st
         </div>
 
         {!readOnly && (
-          <form onSubmit={submit} className="px-4 py-3 border-t border-gray-200 flex gap-2">
-            <input
-              value={text}
-              onChange={e => setText(e.target.value)}
-              placeholder="익명으로 한줄평 달기..."
-              className="flex-1 bg-gray-100 px-4 py-2 text-sm focus:outline-none text-gray-900 placeholder-gray-400"
-            />
-            <button type="submit" disabled={loading || !text.trim()} className="px-4 py-2 bg-[#6A7BA2] text-white text-sm font-bold disabled:opacity-40">
-              전송
-            </button>
-          </form>
+          submitted ? (
+            <div className="px-4 py-5 border-t border-gray-200 flex items-center justify-center gap-2 text-gray-700 text-sm font-medium">
+              ✨ 한줄평이 등록됐습니다…
+            </div>
+          ) : (
+            <form onSubmit={submit} className="px-4 py-3 border-t border-gray-200 flex gap-2">
+              <input
+                value={text}
+                onChange={e => setText(e.target.value)}
+                placeholder="익명으로 한줄평 달기..."
+                className="flex-1 bg-gray-100 px-4 py-2 text-sm focus:outline-none text-gray-900 placeholder-gray-400"
+              />
+              <button type="submit" disabled={loading || !text.trim()} className="px-4 py-2 bg-[#6A7BA2] text-white text-sm font-bold disabled:opacity-40">
+                전송
+              </button>
+            </form>
+          )
         )}
       </div>
     </div>
