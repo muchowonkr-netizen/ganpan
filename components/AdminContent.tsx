@@ -27,6 +27,30 @@ export default function AdminContent() {
     })
   }, [])
 
+  useEffect(() => {
+    if (!loggedIn) return
+
+    if (Notification.permission === 'default') {
+      void Notification.requestPermission()
+    }
+
+    const channel = supabase
+      .channel('new-signs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signs' }, payload => {
+        const sign = payload.new as { caption?: string }
+        if (Notification.permission === 'granted') {
+          new Notification('📸 새 간판 제보!', {
+            body: sign.caption ?? '캡션 없음',
+            icon: '/icon-192.png',
+          })
+        }
+        void loadSigns()
+      })
+      .subscribe()
+
+    return () => { void supabase.removeChannel(channel) }
+  }, [loggedIn])
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setAuthLoading(true)
