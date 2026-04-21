@@ -30,7 +30,7 @@ export default function AdminContent() {
   useEffect(() => {
     if (!loggedIn) return
 
-    if (Notification.permission === 'default') {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
       void Notification.requestPermission()
     }
 
@@ -38,7 +38,7 @@ export default function AdminContent() {
       .channel('new-signs')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signs' }, payload => {
         const sign = payload.new as { caption?: string }
-        if (Notification.permission === 'granted') {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
           new Notification('📸 새 간판 제보!', {
             body: sign.caption ?? '캡션 없음',
             icon: '/icon-192.png',
