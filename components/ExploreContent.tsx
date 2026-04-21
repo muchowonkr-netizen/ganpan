@@ -34,7 +34,7 @@ export default function ExploreContent() {
   return (
     <div className="pt-4">
       <div className="px-4 mb-3 flex items-center justify-between">
-        <h1 className="text-xl font-black text-gray-900">간판을 좋아하세요...</h1>
+        <h1 className="text-xl font-light text-gray-900">간판을 좋아하세요...</h1>
         <Link
           href="/explore"
           className="w-12 h-12 bg-white text-black text-xl flex items-center justify-center font-bold border border-black active:scale-95 transition-transform"
