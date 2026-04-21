@@ -44,7 +44,7 @@ export default function ExploreContent() {
         </Link>
       </div>
 
-      <div className="px-4">
+      <div>
         {loading ? (
           <div className="flex items-center justify-center py-20 text-sm text-zinc-500">잠시만 기다려 주세요…</div>
         ) : signs.length === 0 ? (
@@ -54,13 +54,13 @@ export default function ExploreContent() {
           </div>
         ) : (
           <>
-            <div className="flex gap-2">
-              <div className="flex-1 flex flex-col gap-2">
+            <div className="flex gap-0.5">
+              <div className="flex-1 flex flex-col gap-0.5">
                 {signs.filter((_, i) => i % 2 === 0).map((sign) => (
                   <SignTile key={sign.id} sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
                 ))}
               </div>
-              <div className="flex-1 flex flex-col gap-2">
+              <div className="flex-1 flex flex-col gap-0.5">
                 {signs.filter((_, i) => i % 2 === 1).map((sign) => (
                   <SignTile key={sign.id} sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
                 ))}
@@ -81,7 +81,7 @@ export default function ExploreContent() {
 
 function SignTile({ sign, onOpen }: { sign: Sign; onOpen: () => void }) {
   return (
-    <div className="relative rounded-2xl overflow-hidden cursor-pointer break-inside-avoid mb-2" onClick={onOpen}>
+    <div className="relative overflow-hidden cursor-pointer" onClick={onOpen}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-auto block" />
       {sign.caption && (
