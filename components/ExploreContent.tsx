@@ -1,17 +1,21 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { Sign } from '@/types'
 import CommentSheet from './CommentSheet'
 import SignViewer from './SignViewer'
 import Link from 'next/link'
 
+const PAGE_SIZE = 20
+
 export default function ExploreContent() {
   const [signs, setSigns] = useState<Sign[]>([])
   const [loading, setLoading] = useState(true)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [commentSign, setCommentSign] = useState<string | null>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   async function loadFeed() {
     setLoading(true)
@@ -25,11 +29,26 @@ export default function ExploreContent() {
       if (!seen.has(s.id)) { seen.add(s.id); merged.push(s) }
     }
     setSigns(merged.sort(() => Math.random() - 0.5))
+    setVisibleCount(PAGE_SIZE)
     setLoading(false)
   }
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadFeed() }, [])
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        setVisibleCount(c => c + PAGE_SIZE)
+      }
+    }, { rootMargin: '200px' })
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [loading])
+
+  const visible = signs.slice(0, visibleCount)
 
   return (
     <div className="pt-4">
@@ -55,13 +74,13 @@ export default function ExploreContent() {
         ) : (
           <>
             <div className="columns-2 gap-0.5 animate-fade-in-up">
-              {signs.map((sign) => (
+              {visible.map((sign) => (
                 <div key={sign.id} className="break-inside-avoid mb-0.5">
                   <SignTile sign={sign} onOpen={() => setViewerIndex(signs.indexOf(sign))} />
                 </div>
               ))}
             </div>
-            <div className="h-12" />
+            <div ref={sentinelRef} className="h-12" />
           </>
         )}
       </div>
@@ -76,7 +95,7 @@ export default function ExploreContent() {
 
 function SignTile({ sign, onOpen }: { sign: Sign; onOpen: () => void }) {
   return (
-    <div className="relative overflow-hidden cursor-pointer border border-black" onClick={onOpen}>
+    <div className="relative overflow-hidden cursor-pointer border border-black bg-gray-100" onClick={onOpen}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-auto block" />
       {sign.caption && (
