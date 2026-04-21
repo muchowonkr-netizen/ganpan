@@ -103,13 +103,13 @@ export default function SwipeFeed() {
         />
 
         <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-5">
-          <ActionButton emoji="✕" color="text-red-400 border-red-400 bg-black/45 backdrop-blur-sm" onClick={() => { void recordAction('dislike') }} />
+          <ActionButton emoji="✕" color="text-[#E8A0A0] border-[#E8A0A0] bg-black/45 backdrop-blur-sm" onClick={() => { void recordAction('dislike') }} />
           <ActionButton
             emoji="⭐"
-            color="text-blue-400 border-blue-400 bg-black/45 backdrop-blur-sm"
+            color="text-[#A0B4E8] border-[#A0B4E8] bg-black/45 backdrop-blur-sm"
             onClick={handleSuperLike}
           />
-          <ActionButton emoji="♥" color="text-green-400 border-green-400 bg-black/45 backdrop-blur-sm" onClick={() => { void recordAction('like') }} />
+          <ActionButton emoji="♥" color="text-[#A0D4A8] border-[#A0D4A8] bg-black/45 backdrop-blur-sm" onClick={() => { void recordAction('like') }} />
         </div>
       </div>
 

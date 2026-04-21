@@ -81,7 +81,7 @@ export default function ExploreContent() {
 
 function SignTile({ sign, onOpen }: { sign: Sign; onOpen: () => void }) {
   return (
-    <div className="relative overflow-hidden cursor-pointer" onClick={onOpen}>
+    <div className="relative overflow-hidden cursor-pointer border border-black" onClick={onOpen}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-auto block" />
       {sign.caption && (
