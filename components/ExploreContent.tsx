@@ -9,9 +9,29 @@ import Link from 'next/link'
 
 const BATCH_SIZE = 20
 
+type LayoutRow =
+  | { type: 'full'; sign: Sign }
+  | { type: 'half'; left: Sign; right: Sign }
+
+function buildLayout(signs: Sign[]): LayoutRow[] {
+  const rows: LayoutRow[] = []
+  let i = 0
+  while (i < signs.length) {
+    const remaining = signs.length - i
+    if (remaining === 1 || Math.random() < 0.3) {
+      rows.push({ type: 'full', sign: signs[i] })
+      i++
+    } else {
+      rows.push({ type: 'half', left: signs[i], right: signs[i + 1] })
+      i += 2
+    }
+  }
+  return rows
+}
+
 export default function ExploreContent() {
   const [allSigns, setAllSigns] = useState<Sign[]>([])
-  const [renderedSigns, setRenderedSigns] = useState<Sign[]>([])
+  const [layout, setLayout] = useState<LayoutRow[]>([])
   const [loading, setLoading] = useState(true)
   const [allLoaded, setAllLoaded] = useState(false)
   const [commentSign, setCommentSign] = useState<string | null>(null)
@@ -43,7 +63,7 @@ export default function ExploreContent() {
 
     const firstBatch = scored.slice(0, BATCH_SIZE)
     renderedCountRef.current = firstBatch.length
-    setRenderedSigns(firstBatch)
+    setLayout(buildLayout(firstBatch))
     setAllLoaded(firstBatch.length >= scored.length)
     setLoading(false)
   }
@@ -57,7 +77,7 @@ export default function ExploreContent() {
     const batch = all.slice(count, count + BATCH_SIZE)
     const newCount = count + batch.length
     renderedCountRef.current = newCount
-    setRenderedSigns(prev => [...prev, ...batch])
+    setLayout(prev => [...prev, ...buildLayout(batch)])
     setAllLoaded(newCount >= all.length)
     loadingMoreRef.current = false
   }
@@ -76,6 +96,10 @@ export default function ExploreContent() {
     return () => observer.disconnect()
   }, [loading])
 
+  function openSign(sign: Sign) {
+    setViewerIndex(allSigns.findIndex(s => s.id === sign.id))
+  }
+
   return (
     <div className="pt-4">
       <div className="px-4 mb-3 flex items-center justify-between">
@@ -92,7 +116,7 @@ export default function ExploreContent() {
       <div className="px-4">
         {loading ? (
           <div className="flex items-center justify-center py-20 text-sm text-zinc-500">잠시만 기다려 주세요…</div>
-        ) : renderedSigns.length === 0 ? (
+        ) : layout.length === 0 ? (
           <div className="flex flex-col items-center py-16 gap-3 text-zinc-600">
             <span className="text-4xl">🪧</span>
             <p className="text-sm">간판이 없어요</p>
@@ -100,10 +124,20 @@ export default function ExploreContent() {
         ) : (
           <>
             <div className="flex flex-col gap-0.5 animate-fade-in-up">
-              {renderedSigns.map(sign => (
-                <SignTile key={sign.id} sign={sign}
-                  onOpen={() => setViewerIndex(allSigns.findIndex(s => s.id === sign.id))} />
-              ))}
+              {layout.map((row, idx) =>
+                row.type === 'full' ? (
+                  <SignTile key={row.sign.id} sign={row.sign} onOpen={() => openSign(row.sign)} />
+                ) : (
+                  <div key={`${row.left.id}-${row.right.id}`} className="flex gap-0.5">
+                    <div className="flex-1 min-w-0">
+                      <SignTile sign={row.left} onOpen={() => openSign(row.left)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <SignTile sign={row.right} onOpen={() => openSign(row.right)} />
+                    </div>
+                  </div>
+                )
+              )}
             </div>
             <div ref={sentinelRef} className="h-4" />
             {allLoaded && (
