@@ -167,7 +167,8 @@ export default function AdminContent() {
 
   async function handleAdjustLike(sign: Sign, delta: number) {
     const next = Math.max(0, sign.like_count + delta)
-    await supabase.from('signs').update({ like_count: next }).eq('id', sign.id)
+    const { error } = await supabase.from('signs').update({ like_count: next }).eq('id', sign.id)
+    if (error) { alert('저장 실패: ' + error.message); return }
     setSigns(prev => prev.map(s => s.id === sign.id ? { ...s, like_count: next } : s))
     if (previewSign?.id === sign.id) setPreviewSign({ ...sign, like_count: next })
   }
