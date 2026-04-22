@@ -139,14 +139,14 @@ export default function ExploreContent() {
           </div>
         ) : (
           <>
-            <div className="flex gap-[2.3px] animate-fade-in-up">
-              <div className="flex-1 flex flex-col gap-[2.3px]">
+            <div className="flex gap-[2.7px] animate-fade-in-up">
+              <div className="flex-1 flex flex-col gap-[2.7px]">
                 {leftCol.map(sign => (
                   <SignTile key={sign.id} sign={sign}
                     onOpen={() => setViewerIndex(allSigns.findIndex(s => s.id === sign.id))} />
                 ))}
               </div>
-              <div className="flex-1 flex flex-col gap-[2.3px]">
+              <div className="flex-1 flex flex-col gap-[2.7px]">
                 {rightCol.map(sign => (
                   <SignTile key={sign.id} sign={sign}
                     onOpen={() => setViewerIndex(allSigns.findIndex(s => s.id === sign.id))} />
