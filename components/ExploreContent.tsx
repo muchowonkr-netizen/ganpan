@@ -130,10 +130,10 @@ export default function ExploreContent() {
                 ) : (
                   <div key={`${row.left.id}-${row.right.id}`} className="flex gap-0.5">
                     <div className="flex-1 min-w-0">
-                      <SignTile sign={row.left} onOpen={() => openSign(row.left)} />
+                      <SignTile sign={row.left} onOpen={() => openSign(row.left)} half />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <SignTile sign={row.right} onOpen={() => openSign(row.right)} />
+                      <SignTile sign={row.right} onOpen={() => openSign(row.right)} half />
                     </div>
                   </div>
                 )
@@ -155,11 +155,18 @@ export default function ExploreContent() {
   )
 }
 
-function SignTile({ sign, onOpen }: { sign: Sign; onOpen: () => void }) {
+function SignTile({ sign, onOpen, half = false }: { sign: Sign; onOpen: () => void; half?: boolean }) {
   return (
-    <div className="relative overflow-hidden cursor-pointer border border-black bg-gray-100" onClick={onOpen}>
+    <div
+      className={`relative overflow-hidden cursor-pointer border border-black bg-gray-100 ${half ? 'aspect-square' : ''}`}
+      onClick={onOpen}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-auto block" />
+      <img
+        src={sign.image_url}
+        alt={sign.caption ?? ''}
+        className={half ? 'absolute inset-0 w-full h-full object-cover' : 'w-full h-auto block'}
+      />
       {sign.caption && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
           <p className="text-xs text-white font-bold truncate">{sign.caption}</p>
