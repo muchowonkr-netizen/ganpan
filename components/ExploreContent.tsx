@@ -55,8 +55,13 @@ export default function ExploreContent() {
       .from('signs').select('*')
       .order('like_count', { ascending: false })
     const fetched = data ?? []
+    const now = Date.now()
     const scored = fetched
-      .map(s => ({ s, score: s.like_count + s.comment_count * 2 + Math.random() * 5 }))
+      .map(s => {
+        const daysSince = (now - new Date(s.created_at).getTime()) / (1000 * 60 * 60 * 24)
+        const recencyBonus = Math.max(0, 7 - daysSince) * 3
+        return { s, score: s.like_count + s.comment_count * 2 + recencyBonus + Math.random() * 5 }
+      })
       .sort((a, b) => b.score - a.score)
       .map(({ s }) => s)
     allSignsRef.current = scored
