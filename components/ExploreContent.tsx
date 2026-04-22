@@ -9,9 +9,12 @@ import Link from 'next/link'
 
 const BATCH_SIZE = 20
 
+const HALF_ASPECTS = ['aspect-[4/3]', 'aspect-square', 'aspect-[3/4]', 'aspect-[2/3]'] as const
+type HalfAspect = typeof HALF_ASPECTS[number]
+
 type LayoutRow =
   | { type: 'full'; sign: Sign }
-  | { type: 'half'; left: Sign; right: Sign }
+  | { type: 'half'; left: Sign; right: Sign; aspect: HalfAspect }
 
 function buildLayout(signs: Sign[]): LayoutRow[] {
   const rows: LayoutRow[] = []
@@ -22,7 +25,8 @@ function buildLayout(signs: Sign[]): LayoutRow[] {
       rows.push({ type: 'full', sign: signs[i] })
       i++
     } else {
-      rows.push({ type: 'half', left: signs[i], right: signs[i + 1] })
+      const aspect = HALF_ASPECTS[Math.floor(Math.random() * HALF_ASPECTS.length)]
+      rows.push({ type: 'half', left: signs[i], right: signs[i + 1], aspect })
       i += 2
     }
   }
@@ -124,16 +128,16 @@ export default function ExploreContent() {
         ) : (
           <>
             <div className="flex flex-col gap-0.5 animate-fade-in-up">
-              {layout.map((row, idx) =>
+              {layout.map((row) =>
                 row.type === 'full' ? (
                   <SignTile key={row.sign.id} sign={row.sign} onOpen={() => openSign(row.sign)} />
                 ) : (
                   <div key={`${row.left.id}-${row.right.id}`} className="flex gap-0.5">
                     <div className="flex-1 min-w-0">
-                      <SignTile sign={row.left} onOpen={() => openSign(row.left)} half />
+                      <SignTile sign={row.left} onOpen={() => openSign(row.left)} aspect={row.aspect} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <SignTile sign={row.right} onOpen={() => openSign(row.right)} half />
+                      <SignTile sign={row.right} onOpen={() => openSign(row.right)} aspect={row.aspect} />
                     </div>
                   </div>
                 )
@@ -155,17 +159,17 @@ export default function ExploreContent() {
   )
 }
 
-function SignTile({ sign, onOpen, half = false }: { sign: Sign; onOpen: () => void; half?: boolean }) {
+function SignTile({ sign, onOpen, aspect }: { sign: Sign; onOpen: () => void; aspect?: string }) {
   return (
     <div
-      className={`relative overflow-hidden cursor-pointer border border-black bg-gray-100 ${half ? 'aspect-square' : ''}`}
+      className={`relative overflow-hidden cursor-pointer border border-black bg-gray-100 ${aspect ?? ''}`}
       onClick={onOpen}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={sign.image_url}
         alt={sign.caption ?? ''}
-        className={half ? 'absolute inset-0 w-full h-full object-cover' : 'w-full h-auto block'}
+        className={aspect ? 'absolute inset-0 w-full h-full object-cover' : 'w-full h-auto block'}
       />
       {sign.caption && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
