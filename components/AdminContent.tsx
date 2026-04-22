@@ -138,7 +138,8 @@ export default function AdminContent() {
 
   async function handleDeleteComment(commentId: string) {
     setDeletingCommentId(commentId)
-    await supabase.from('comments').delete().eq('id', commentId)
+    const { error } = await supabase.from('comments').delete().eq('id', commentId)
+    if (error) { alert('삭제 실패: ' + error.message); setDeletingCommentId(null); return }
     setPreviewComments(prev => prev.filter(c => c.id !== commentId))
     setAllComments(prev => prev.filter(c => c.id !== commentId))
     setDeletingCommentId(null)
