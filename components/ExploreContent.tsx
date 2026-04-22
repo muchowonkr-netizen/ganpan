@@ -51,31 +51,29 @@ export default function ExploreContent() {
 
   async function loadFeed() {
     setLoading(true)
-    const [{ data: popular }, { data: newest }] = await Promise.all([
-      supabase.from('signs').select('*').order('like_count', { ascending: false }).limit(50),
-      supabase.from('signs').select('*').order('created_at', { ascending: false }).limit(50),
-    ])
-    const seen = new Set<string>()
-    const merged: Sign[] = []
-    for (const s of [...(popular ?? []), ...(newest ?? [])]) {
-      if (!seen.has(s.id)) { seen.add(s.id); merged.push(s) }
-    }
-    const shuffled = merged.sort(() => Math.random() - 0.5)
-    allSignsRef.current = shuffled
-    setAllSigns(shuffled)
+    const { data } = await supabase
+      .from('signs').select('*')
+      .order('like_count', { ascending: false })
+    const fetched = data ?? []
+    const scored = fetched
+      .map(s => ({ s, score: s.like_count + s.comment_count * 2 + Math.random() * 5 }))
+      .sort((a, b) => b.score - a.score)
+      .map(({ s }) => s)
+    allSignsRef.current = scored
+    setAllSigns(scored)
 
     leftHRef.current = 0
     rightHRef.current = 0
     renderedCountRef.current = 0
 
-    const firstBatch = shuffled.slice(0, BATCH_SIZE)
+    const firstBatch = scored.slice(0, BATCH_SIZE)
     const { left, right, leftH, rightH } = await distributeToColumns(firstBatch, 0, 0)
     leftHRef.current = leftH
     rightHRef.current = rightH
     renderedCountRef.current = firstBatch.length
     setLeftCol(left)
     setRightCol(right)
-    setAllLoaded(firstBatch.length >= shuffled.length)
+    setAllLoaded(firstBatch.length >= scored.length)
     setLoading(false)
   }
 
