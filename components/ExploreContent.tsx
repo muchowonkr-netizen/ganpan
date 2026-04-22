@@ -169,7 +169,7 @@ function SignTile({ sign, onOpen, aspect }: { sign: Sign; onOpen: () => void; as
       <img
         src={sign.image_url}
         alt={sign.caption ?? ''}
-        className={aspect ? 'absolute inset-0 w-full h-full object-cover' : 'w-full h-auto block'}
+        className={aspect ? 'absolute inset-0 w-full h-full object-contain' : 'w-full h-auto block'}
       />
       {sign.caption && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
