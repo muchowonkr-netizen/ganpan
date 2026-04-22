@@ -24,7 +24,11 @@ export default function ExploreContent() {
     for (const s of [...(popular ?? []), ...(newest ?? [])]) {
       if (!seen.has(s.id)) { seen.add(s.id); merged.push(s) }
     }
-    setSigns(merged.sort(() => Math.random() - 0.5))
+    const shuffled = merged
+      .map(s => ({ s, score: s.like_count + s.comment_count * 2 + Math.random() * 5 }))
+      .sort((a, b) => b.score - a.score)
+      .map(({ s }) => s)
+    setSigns(shuffled)
     setLoading(false)
   }
 
