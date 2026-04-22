@@ -113,11 +113,11 @@ export default function ExploreContent() {
               {items.map(({ sign, full }) => (
                 <div
                   key={sign.id}
-                  className={`relative break-inside-avoid mb-0.5 cursor-pointer border border-black bg-gray-100 overflow-hidden${full ? ' [column-span:all]' : ''}`}
+                  className={`relative break-inside-avoid mb-0.5 cursor-pointer border border-black bg-gray-100 overflow-hidden${full ? ' [column-span:all]' : ' aspect-[4/5]'}`}
                   onClick={() => openSign(sign)}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-auto block" />
+                  <img src={sign.image_url} alt={sign.caption ?? ''} className={full ? 'w-full h-auto block' : 'absolute inset-0 w-full h-full object-cover'} />
                   {sign.caption && (
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
                       <p className="text-xs text-white font-bold truncate">{sign.caption}</p>
