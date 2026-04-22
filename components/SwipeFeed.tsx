@@ -19,8 +19,8 @@ export default function SwipeFeed() {
     setLoading(true)
     try {
       const [{ data: popular }, { data: newest }] = await Promise.all([
-        supabase.from('signs').select('*').order('like_count', { ascending: false }).limit(30),
-        supabase.from('signs').select('*').order('created_at', { ascending: false }).limit(30),
+        supabase.from('signs').select('*').order('like_count', { ascending: false }).limit(50),
+        supabase.from('signs').select('*').order('created_at', { ascending: false }).limit(50),
       ])
       const seen = new Set<string>()
       const merged: Sign[] = []

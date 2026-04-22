@@ -212,7 +212,7 @@ export default function AdminContent() {
           onClick={() => { setActiveTab('comments'); if (allComments.length === 0) void loadAllComments() }}
           className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${activeTab === 'comments' ? 'bg-zinc-600 text-white' : 'text-zinc-400'}`}
         >
-          한줄평
+          한줄평 {allComments.length > 0 && `(${allComments.length})`}
         </button>
       </div>
 
