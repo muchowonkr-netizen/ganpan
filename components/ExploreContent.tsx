@@ -9,20 +9,41 @@ import Link from 'next/link'
 
 const BATCH_SIZE = 20
 
-type LayoutItem = { sign: Sign; full: boolean }
+function getAspectRatio(url: string): Promise<number> {
+  return new Promise(resolve => {
+    const img = new window.Image()
+    img.onload = () => resolve(img.naturalHeight / img.naturalWidth)
+    img.onerror = () => resolve(1)
+    img.src = url
+  })
+}
 
-function buildItems(signs: Sign[]): LayoutItem[] {
-  return signs.map(sign => ({ sign, full: Math.random() < 0.3 }))
+async function distributeToColumns(
+  signs: Sign[],
+  leftH: number,
+  rightH: number
+): Promise<{ left: Sign[]; right: Sign[]; leftH: number; rightH: number }> {
+  const ratios = await Promise.all(signs.map(s => getAspectRatio(s.image_url)))
+  const left: Sign[] = []
+  const right: Sign[] = []
+  signs.forEach((sign, i) => {
+    if (leftH <= rightH) { left.push(sign); leftH += ratios[i] }
+    else { right.push(sign); rightH += ratios[i] }
+  })
+  return { left, right, leftH, rightH }
 }
 
 export default function ExploreContent() {
   const [allSigns, setAllSigns] = useState<Sign[]>([])
-  const [items, setItems] = useState<LayoutItem[]>([])
+  const [leftCol, setLeftCol] = useState<Sign[]>([])
+  const [rightCol, setRightCol] = useState<Sign[]>([])
   const [loading, setLoading] = useState(true)
   const [allLoaded, setAllLoaded] = useState(false)
   const [commentSign, setCommentSign] = useState<string | null>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
 
+  const leftHRef = useRef(0)
+  const rightHRef = useRef(0)
   const renderedCountRef = useRef(0)
   const loadingMoreRef = useRef(false)
   const allSignsRef = useRef<Sign[]>([])
@@ -45,11 +66,18 @@ export default function ExploreContent() {
       .map(({ s }) => s)
     allSignsRef.current = scored
     setAllSigns(scored)
+
+    leftHRef.current = 0
+    rightHRef.current = 0
     renderedCountRef.current = 0
 
     const firstBatch = scored.slice(0, BATCH_SIZE)
+    const { left, right, leftH, rightH } = await distributeToColumns(firstBatch, 0, 0)
+    leftHRef.current = leftH
+    rightHRef.current = rightH
     renderedCountRef.current = firstBatch.length
-    setItems(buildItems(firstBatch))
+    setLeftCol(left)
+    setRightCol(right)
     setAllLoaded(firstBatch.length >= scored.length)
     setLoading(false)
   }
@@ -61,9 +89,15 @@ export default function ExploreContent() {
     if (count >= all.length) return
     loadingMoreRef.current = true
     const batch = all.slice(count, count + BATCH_SIZE)
+    const { left, right, leftH, rightH } = await distributeToColumns(
+      batch, leftHRef.current, rightHRef.current
+    )
+    leftHRef.current = leftH
+    rightHRef.current = rightH
     const newCount = count + batch.length
     renderedCountRef.current = newCount
-    setItems(prev => [...prev, ...buildItems(batch)])
+    setLeftCol(prev => [...prev, ...left])
+    setRightCol(prev => [...prev, ...right])
     setAllLoaded(newCount >= all.length)
     loadingMoreRef.current = false
   }
@@ -82,10 +116,6 @@ export default function ExploreContent() {
     return () => observer.disconnect()
   }, [loading])
 
-  function openSign(sign: Sign) {
-    setViewerIndex(allSigns.findIndex(s => s.id === sign.id))
-  }
-
   return (
     <div className="pt-4">
       <div className="px-4 mb-3 flex items-center justify-between">
@@ -102,29 +132,26 @@ export default function ExploreContent() {
       <div className="px-4">
         {loading ? (
           <div className="flex items-center justify-center py-20 text-sm text-zinc-500">잠시만 기다려 주세요…</div>
-        ) : items.length === 0 ? (
+        ) : leftCol.length === 0 && rightCol.length === 0 ? (
           <div className="flex flex-col items-center py-16 gap-3 text-zinc-600">
             <span className="text-4xl">🪧</span>
             <p className="text-sm">간판이 없어요</p>
           </div>
         ) : (
           <>
-            <div className="columns-2 gap-0.5 animate-fade-in-up">
-              {items.map(({ sign, full }) => (
-                <div
-                  key={sign.id}
-                  className={`relative break-inside-avoid mb-0.5 cursor-pointer border border-black bg-gray-100 overflow-hidden${full ? ' [column-span:all]' : ' aspect-[4/5]'}`}
-                  onClick={() => openSign(sign)}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={sign.image_url} alt={sign.caption ?? ''} className={full ? 'w-full h-auto block' : 'absolute inset-0 w-full h-full object-cover'} />
-                  {sign.caption && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                      <p className="text-xs text-white font-bold truncate">{sign.caption}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="flex gap-0.5 animate-fade-in-up">
+              <div className="flex-1 flex flex-col gap-0.5">
+                {leftCol.map(sign => (
+                  <SignTile key={sign.id} sign={sign}
+                    onOpen={() => setViewerIndex(allSigns.findIndex(s => s.id === sign.id))} />
+                ))}
+              </div>
+              <div className="flex-1 flex flex-col gap-0.5">
+                {rightCol.map(sign => (
+                  <SignTile key={sign.id} sign={sign}
+                    onOpen={() => setViewerIndex(allSigns.findIndex(s => s.id === sign.id))} />
+                ))}
+              </div>
             </div>
             <div ref={sentinelRef} className="h-4" />
             {allLoaded && (
@@ -137,6 +164,20 @@ export default function ExploreContent() {
       {commentSign && <CommentSheet signId={commentSign} onClose={() => setCommentSign(null)} />}
       {viewerIndex !== null && (
         <SignViewer signs={allSigns} startIndex={viewerIndex} onClose={() => setViewerIndex(null)} />
+      )}
+    </div>
+  )
+}
+
+function SignTile({ sign, onOpen }: { sign: Sign; onOpen: () => void }) {
+  return (
+    <div className="relative overflow-hidden cursor-pointer border border-black bg-gray-100" onClick={onOpen}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-auto block" />
+      {sign.caption && (
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+          <p className="text-xs text-white font-bold truncate">{sign.caption}</p>
+        </div>
       )}
     </div>
   )
