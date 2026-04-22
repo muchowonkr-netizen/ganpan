@@ -165,6 +165,13 @@ export default function AdminContent() {
     setCommentsLoading(false)
   }
 
+  async function handleAdjustLike(sign: Sign, delta: number) {
+    const next = Math.max(0, sign.like_count + delta)
+    await supabase.from('signs').update({ like_count: next }).eq('id', sign.id)
+    setSigns(prev => prev.map(s => s.id === sign.id ? { ...s, like_count: next } : s))
+    if (previewSign?.id === sign.id) setPreviewSign({ ...sign, like_count: next })
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut()
     setLoggedIn(false)
@@ -302,7 +309,12 @@ export default function AdminContent() {
             <img src={previewSign.image_url} alt={previewSign.caption ?? ''} className="w-full object-contain max-h-64" />
             <div className="text-center">
               {previewSign.caption && <p className="text-white font-bold">{previewSign.caption}</p>}
-              <p className="text-zinc-400 text-sm mt-1">♥ {previewSign.like_count} · {new Date(previewSign.created_at).toLocaleDateString('ko-KR')}</p>
+              <div className="flex items-center justify-center gap-3 mt-1">
+                <button onClick={() => void handleAdjustLike(previewSign, -1)} className="w-7 h-7 rounded-full bg-zinc-700 text-white font-bold text-sm active:scale-90">−</button>
+                <span className="text-zinc-400 text-sm">♥ {previewSign.like_count}</span>
+                <button onClick={() => void handleAdjustLike(previewSign, +1)} className="w-7 h-7 rounded-full bg-zinc-700 text-white font-bold text-sm active:scale-90">+</button>
+              </div>
+              <p className="text-zinc-500 text-xs mt-1">{new Date(previewSign.created_at).toLocaleDateString('ko-KR')}</p>
             </div>
             <div className="border-t border-zinc-700 pt-3">
               <p className="text-zinc-400 text-xs mb-2">한줄평 {previewComments.length}개</p>
