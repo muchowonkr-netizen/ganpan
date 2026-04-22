@@ -9,41 +9,34 @@ import Link from 'next/link'
 
 const BATCH_SIZE = 20
 
-function getAspectRatio(url: string): Promise<number> {
-  return new Promise(resolve => {
-    const img = new window.Image()
-    img.onload = () => resolve(img.naturalHeight / img.naturalWidth)
-    img.onerror = () => resolve(1)
-    img.src = url
-  })
-}
+type LayoutRow =
+  | { type: 'full'; sign: Sign }
+  | { type: 'half'; left: Sign; right: Sign }
 
-async function distributeToColumns(
-  signs: Sign[],
-  leftH: number,
-  rightH: number
-): Promise<{ left: Sign[]; right: Sign[]; leftH: number; rightH: number }> {
-  const ratios = await Promise.all(signs.map(s => getAspectRatio(s.image_url)))
-  const left: Sign[] = []
-  const right: Sign[] = []
-  signs.forEach((sign, i) => {
-    if (leftH <= rightH) { left.push(sign); leftH += ratios[i] }
-    else { right.push(sign); rightH += ratios[i] }
-  })
-  return { left, right, leftH, rightH }
+function buildLayout(signs: Sign[]): LayoutRow[] {
+  const rows: LayoutRow[] = []
+  let i = 0
+  while (i < signs.length) {
+    const remaining = signs.length - i
+    if (remaining === 1 || Math.random() < 0.3) {
+      rows.push({ type: 'full', sign: signs[i] })
+      i++
+    } else {
+      rows.push({ type: 'half', left: signs[i], right: signs[i + 1] })
+      i += 2
+    }
+  }
+  return rows
 }
 
 export default function ExploreContent() {
   const [allSigns, setAllSigns] = useState<Sign[]>([])
-  const [leftCol, setLeftCol] = useState<Sign[]>([])
-  const [rightCol, setRightCol] = useState<Sign[]>([])
+  const [layout, setLayout] = useState<LayoutRow[]>([])
   const [loading, setLoading] = useState(true)
   const [allLoaded, setAllLoaded] = useState(false)
   const [commentSign, setCommentSign] = useState<string | null>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
 
-  const leftHRef = useRef(0)
-  const rightHRef = useRef(0)
   const renderedCountRef = useRef(0)
   const loadingMoreRef = useRef(false)
   const allSignsRef = useRef<Sign[]>([])
@@ -66,18 +59,11 @@ export default function ExploreContent() {
       .map(({ s }) => s)
     allSignsRef.current = scored
     setAllSigns(scored)
-
-    leftHRef.current = 0
-    rightHRef.current = 0
     renderedCountRef.current = 0
 
     const firstBatch = scored.slice(0, BATCH_SIZE)
-    const { left, right, leftH, rightH } = await distributeToColumns(firstBatch, 0, 0)
-    leftHRef.current = leftH
-    rightHRef.current = rightH
     renderedCountRef.current = firstBatch.length
-    setLeftCol(left)
-    setRightCol(right)
+    setLayout(buildLayout(firstBatch))
     setAllLoaded(firstBatch.length >= scored.length)
     setLoading(false)
   }
@@ -89,15 +75,9 @@ export default function ExploreContent() {
     if (count >= all.length) return
     loadingMoreRef.current = true
     const batch = all.slice(count, count + BATCH_SIZE)
-    const { left, right, leftH, rightH } = await distributeToColumns(
-      batch, leftHRef.current, rightHRef.current
-    )
-    leftHRef.current = leftH
-    rightHRef.current = rightH
     const newCount = count + batch.length
     renderedCountRef.current = newCount
-    setLeftCol(prev => [...prev, ...left])
-    setRightCol(prev => [...prev, ...right])
+    setLayout(prev => [...prev, ...buildLayout(batch)])
     setAllLoaded(newCount >= all.length)
     loadingMoreRef.current = false
   }
@@ -116,6 +96,10 @@ export default function ExploreContent() {
     return () => observer.disconnect()
   }, [loading])
 
+  function openSign(sign: Sign) {
+    setViewerIndex(allSigns.findIndex(s => s.id === sign.id))
+  }
+
   return (
     <div className="pt-4">
       <div className="px-4 mb-3 flex items-center justify-between">
@@ -132,26 +116,28 @@ export default function ExploreContent() {
       <div className="px-4">
         {loading ? (
           <div className="flex items-center justify-center py-20 text-sm text-zinc-500">잠시만 기다려 주세요…</div>
-        ) : leftCol.length === 0 && rightCol.length === 0 ? (
+        ) : layout.length === 0 ? (
           <div className="flex flex-col items-center py-16 gap-3 text-zinc-600">
             <span className="text-4xl">🪧</span>
             <p className="text-sm">간판이 없어요</p>
           </div>
         ) : (
           <>
-            <div className="flex gap-0.5 animate-fade-in-up">
-              <div className="flex-1 flex flex-col gap-0.5">
-                {leftCol.map(sign => (
-                  <SignTile key={sign.id} sign={sign}
-                    onOpen={() => setViewerIndex(allSigns.findIndex(s => s.id === sign.id))} />
-                ))}
-              </div>
-              <div className="flex-1 flex flex-col gap-0.5">
-                {rightCol.map(sign => (
-                  <SignTile key={sign.id} sign={sign}
-                    onOpen={() => setViewerIndex(allSigns.findIndex(s => s.id === sign.id))} />
-                ))}
-              </div>
+            <div className="flex flex-col gap-0.5 animate-fade-in-up">
+              {layout.map((row, idx) =>
+                row.type === 'full' ? (
+                  <SignTile key={row.sign.id} sign={row.sign} onOpen={() => openSign(row.sign)} />
+                ) : (
+                  <div key={`${row.left.id}-${row.right.id}`} className="flex gap-0.5">
+                    <div className="flex-1 min-w-0">
+                      <SignTile sign={row.left} onOpen={() => openSign(row.left)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <SignTile sign={row.right} onOpen={() => openSign(row.right)} />
+                    </div>
+                  </div>
+                )
+              )}
             </div>
             <div ref={sentinelRef} className="h-4" />
             {allLoaded && (
