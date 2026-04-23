@@ -45,13 +45,17 @@ export default function SwipeFeed() {
 
   async function recordAction(action: 'like' | 'dislike') {
     if (!current) return
-    if (action === 'like') await supabase.rpc('increment_like', { sign_id: current.id })
+    if (action === 'like') {
+      await supabase.from('signs').update({ like_count: current.like_count + 1 }).eq('id', current.id)
+      void supabase.from('like_history').insert({ sign_id: current.id })
+    }
     advance()
   }
 
   async function handleSuperLike() {
     if (!current) return
-    await supabase.rpc('increment_super_like', { sign_id: current.id })
+    await supabase.from('signs').update({ like_count: current.like_count + 1 }).eq('id', current.id)
+    void supabase.from('like_history').insert({ sign_id: current.id })
     setSuperLikedId(current.id)
     setShowComment(true)
   }
