@@ -27,6 +27,8 @@ export default function AdminContent() {
   const [allComments, setAllComments] = useState<(Comment & { signs: { image_url: string; caption: string | null } | null })[]>([])
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [likeActivity, setLikeActivity] = useState<{ sign_id: string; image_url: string; like_count: number; time: Date }[]>([])
+  const [likeHistory, setLikeHistory] = useState<{ id: string; sign_id: string; image_url: string; created_at: string }[]>([])
+  const [likeHistoryLoading, setLikeHistoryLoading] = useState(false)
   const bulkRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -180,6 +182,24 @@ export default function AdminContent() {
     setCommentsLoading(false)
   }
 
+  async function loadLikeHistory() {
+    setLikeHistoryLoading(true)
+    const { data } = await supabase
+      .from('like_history')
+      .select('id, sign_id, created_at, signs(image_url)')
+      .order('created_at', { ascending: false })
+      .limit(200)
+    setLikeHistory(
+      (data ?? []).map((r: { id: string; sign_id: string; created_at: string; signs: { image_url: string } | null }) => ({
+        id: r.id,
+        sign_id: r.sign_id,
+        image_url: r.signs?.image_url ?? '',
+        created_at: r.created_at,
+      }))
+    )
+    setLikeHistoryLoading(false)
+  }
+
   async function handleAdjustLike(sign: Sign, delta: number) {
     const next = Math.max(0, sign.like_count + delta)
     const { error } = await supabase.from('signs').update({ like_count: next }).eq('id', sign.id)
@@ -238,10 +258,10 @@ export default function AdminContent() {
           한줄평 {allComments.length > 0 && `(${allComments.length})`}
         </button>
         <button
-          onClick={() => setActiveTab('likes')}
+          onClick={() => { setActiveTab('likes'); void loadLikeHistory() }}
           className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${activeTab === 'likes' ? 'bg-zinc-600 text-white' : 'text-zinc-400'}`}
         >
-          좋아요 {likeActivity.length > 0 && `(${likeActivity.length})`}
+          좋아요 {likeHistory.length > 0 && `(${likeHistory.length})`}
         </button>
       </div>
 
@@ -285,19 +305,23 @@ export default function AdminContent() {
       {activeTab === 'likes' && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-zinc-400">실시간 · {likeActivity.length}건</span>
-            <button onClick={() => setLikeActivity([])} className="text-xs text-zinc-500 px-2 py-1 bg-zinc-800 rounded-lg">초기화</button>
+            <span className="text-xs text-zinc-400">최신순 · {likeHistory.length}건</span>
+            <button onClick={() => void loadLikeHistory()} className="text-xs text-zinc-500 px-2 py-1 bg-zinc-800 rounded-lg">새로고침</button>
           </div>
-          {likeActivity.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-zinc-500 text-sm">좋아요 활동이 없어요</div>
+          {likeHistoryLoading ? (
+            <div className="flex items-center justify-center py-16 text-zinc-500 text-sm">불러오는 중…</div>
+          ) : likeHistory.length === 0 ? (
+            <div className="flex items-center justify-center py-16 text-zinc-500 text-sm">좋아요 기록이 없어요</div>
           ) : (
-            likeActivity.map((a, i) => (
-              <div key={i} className="flex gap-3 bg-zinc-800 rounded-xl p-3 items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={a.image_url} alt="" className="w-14 h-14 object-cover rounded-lg flex-shrink-0" />
+            likeHistory.map(a => (
+              <div key={a.id} className="flex gap-3 bg-zinc-800 rounded-xl p-3 items-center">
+                {a.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={a.image_url} alt="" className="w-14 h-14 object-cover rounded-lg flex-shrink-0" />
+                )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white font-bold">♥ {a.like_count}</p>
-                  <p className="text-[10px] text-zinc-500 mt-1">{a.time.toLocaleString('ko-KR')}</p>
+                  <p className="text-sm text-white font-bold">♥ 좋아요</p>
+                  <p className="text-[10px] text-zinc-500 mt-1">{new Date(a.created_at).toLocaleString('ko-KR')}</p>
                 </div>
               </div>
             ))
