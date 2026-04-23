@@ -23,9 +23,12 @@ export default function AdminContent() {
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null)
   const [newComment, setNewComment] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
-  const [activeTab, setActiveTab] = useState<'signs' | 'comments'>('signs')
+  const [activeTab, setActiveTab] = useState<'signs' | 'comments' | 'likes'>('signs')
   const [allComments, setAllComments] = useState<(Comment & { signs: { image_url: string; caption: string | null } | null })[]>([])
   const [commentsLoading, setCommentsLoading] = useState(false)
+  const [likeActivity, setLikeActivity] = useState<{ sign_id: string; image_url: string; like_count: number; time: Date }[]>([])
+  const [likeHistory, setLikeHistory] = useState<{ id: string; sign_id: string; image_url: string; created_at: string }[]>([])
+  const [likeHistoryLoading, setLikeHistoryLoading] = useState(false)
   const bulkRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -42,7 +45,7 @@ export default function AdminContent() {
     }
 
     const channel = supabase
-      .channel('new-signs')
+      .channel('admin-monitor')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signs' }, payload => {
         const sign = payload.new as { caption?: string }
         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
@@ -52,6 +55,14 @@ export default function AdminContent() {
           })
         }
         void loadSigns()
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'signs' }, payload => {
+        const sign = payload.new as Sign
+        setLikeActivity(prev => [{ sign_id: sign.id, image_url: sign.image_url, like_count: sign.like_count, time: new Date() }, ...prev].slice(0, 100))
+        setSigns(prev => prev.map(s => s.id === sign.id ? { ...s, like_count: sign.like_count } : s))
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          new Notification('♥ 좋아요!', { body: `♥ ${sign.like_count}`, icon: '/icon-192.png' })
+        }
       })
       .subscribe()
 
@@ -171,6 +182,24 @@ export default function AdminContent() {
     setCommentsLoading(false)
   }
 
+  async function loadLikeHistory() {
+    setLikeHistoryLoading(true)
+    const { data } = await supabase
+      .from('like_history')
+      .select('id, sign_id, created_at, signs(image_url)')
+      .order('created_at', { ascending: false })
+      .limit(200)
+    setLikeHistory(
+      (data ?? []).map((r: { id: string; sign_id: string; created_at: string; signs: { image_url: string } | null }) => ({
+        id: r.id,
+        sign_id: r.sign_id,
+        image_url: r.signs?.image_url ?? '',
+        created_at: r.created_at,
+      }))
+    )
+    setLikeHistoryLoading(false)
+  }
+
   async function handleAdjustLike(sign: Sign, delta: number) {
     const next = Math.max(0, sign.like_count + delta)
     const { error } = await supabase.from('signs').update({ like_count: next }).eq('id', sign.id)
@@ -228,6 +257,12 @@ export default function AdminContent() {
         >
           한줄평 {allComments.length > 0 && `(${allComments.length})`}
         </button>
+        <button
+          onClick={() => { setActiveTab('likes'); void loadLikeHistory() }}
+          className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${activeTab === 'likes' ? 'bg-zinc-600 text-white' : 'text-zinc-400'}`}
+        >
+          좋아요 {likeHistory.length > 0 && `(${likeHistory.length})`}
+        </button>
       </div>
 
       {/* 한줄평 탭 */}
@@ -260,6 +295,34 @@ export default function AdminContent() {
                 >
                   {deletingCommentId === c.id ? '...' : '삭제'}
                 </button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* 좋아요 탭 */}
+      {activeTab === 'likes' && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-zinc-400">최신순 · {likeHistory.length}건</span>
+            <button onClick={() => void loadLikeHistory()} className="text-xs text-zinc-500 px-2 py-1 bg-zinc-800 rounded-lg">새로고침</button>
+          </div>
+          {likeHistoryLoading ? (
+            <div className="flex items-center justify-center py-16 text-zinc-500 text-sm">불러오는 중…</div>
+          ) : likeHistory.length === 0 ? (
+            <div className="flex items-center justify-center py-16 text-zinc-500 text-sm">좋아요 기록이 없어요</div>
+          ) : (
+            likeHistory.map(a => (
+              <div key={a.id} className="flex gap-3 bg-zinc-800 rounded-xl p-3 items-center">
+                {a.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={a.image_url} alt="" className="w-14 h-14 object-cover rounded-lg flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white font-bold">♥ 좋아요</p>
+                  <p className="text-[10px] text-zinc-500 mt-1">{new Date(a.created_at).toLocaleString('ko-KR')}</p>
+                </div>
               </div>
             ))
           )}
