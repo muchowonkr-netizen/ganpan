@@ -39,10 +39,18 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
     }
 
     const { data: { publicUrl } } = supabase.storage.from('signs').getPublicUrl(path)
-    await supabase.from('signs').insert({
+    const { data: sign, error: insertErr } = await supabase.from('signs').insert({
       image_url: publicUrl,
-      caption: caption.trim() || null,
-    })
+    }).select('id').single()
+    if (insertErr || !sign) {
+      alert('등록 실패: ' + insertErr?.message)
+      setUploading(false)
+      return
+    }
+
+    if (caption.trim()) {
+      await supabase.from('comments').insert({ sign_id: sign.id, content: caption.trim() })
+    }
 
     onSuccess()
     onClose()

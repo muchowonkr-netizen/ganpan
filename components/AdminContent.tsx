@@ -27,6 +27,7 @@ export default function AdminContent() {
   const [allComments, setAllComments] = useState<(Comment & { signs: { image_url: string; caption: string | null } | null })[]>([])
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [commentsCount, setCommentsCount] = useState<number | null>(null)
+  const [likeActivity, setLikeActivity] = useState<{ sign_id: string; image_url: string; like_count: number; time: Date }[]>([])
   const [likeHistory, setLikeHistory] = useState<{ id: string; sign_id: string; user_id: string | null; created_at: string; signs: { image_url: string; caption: string | null } | null }[]>([])
   const [likesLoading, setLikesLoading] = useState(false)
   const bulkRef = useRef<HTMLInputElement>(null)
@@ -45,7 +46,7 @@ export default function AdminContent() {
     }
 
     const channel = supabase
-      .channel('new-signs')
+      .channel('admin-monitor')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signs' }, payload => {
         const sign = payload.new as { caption?: string }
         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
@@ -56,6 +57,14 @@ export default function AdminContent() {
         }
         void loadSigns()
       })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'signs' }, payload => {
+        const sign = payload.new as Sign
+        setLikeActivity(prev => [{ sign_id: sign.id, image_url: sign.image_url, like_count: sign.like_count, time: new Date() }, ...prev].slice(0, 100))
+        setSigns(prev => prev.map(s => s.id === sign.id ? { ...s, like_count: sign.like_count } : s))
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          new Notification('♥ 좋아요!', { body: `♥ ${sign.like_count}`, icon: '/icon-192.png' })
+        }
+      })
       .subscribe()
 
     return () => { void supabase.removeChannel(channel) }
@@ -65,11 +74,16 @@ export default function AdminContent() {
     e.preventDefault()
     setAuthLoading(true)
     setAuthError('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { setAuthError(error.message); setAuthLoading(false); return }
-    setLoggedIn(true)
-    loadSigns()
-    setAuthLoading(false)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) { setAuthError(error.message); return }
+      setLoggedIn(true)
+      void loadSigns()
+    } catch {
+      setAuthError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.')
+    } finally {
+      setAuthLoading(false)
+    }
   }
 
   async function loadSigns() {
@@ -145,7 +159,8 @@ export default function AdminContent() {
 
   async function handleDeleteComment(commentId: string) {
     setDeletingCommentId(commentId)
-    await supabase.from('comments').delete().eq('id', commentId)
+    const { error } = await supabase.from('comments').delete().eq('id', commentId)
+    if (error) { alert('삭제 실패: ' + error.message); setDeletingCommentId(null); return }
     setPreviewComments(prev => prev.filter(c => c.id !== commentId))
     setAllComments(prev => prev.filter(c => c.id !== commentId))
     setDeletingCommentId(null)
@@ -181,6 +196,14 @@ export default function AdminContent() {
       .limit(200)
     setLikeHistory((data ?? []) as typeof likeHistory)
     setLikesLoading(false)
+  }
+
+  async function handleAdjustLike(sign: Sign, delta: number) {
+    const next = Math.max(0, sign.like_count + delta)
+    const { error } = await supabase.from('signs').update({ like_count: next }).eq('id', sign.id)
+    if (error) { alert('저장 실패: ' + error.message); return }
+    setSigns(prev => prev.map(s => s.id === sign.id ? { ...s, like_count: next } : s))
+    if (previewSign?.id === sign.id) setPreviewSign({ ...sign, like_count: next })
   }
 
   async function handleLogout() {
@@ -355,7 +378,12 @@ export default function AdminContent() {
             <img src={previewSign.image_url} alt={previewSign.caption ?? ''} className="w-full object-contain max-h-64" />
             <div className="text-center">
               {previewSign.caption && <p className="text-white font-bold">{previewSign.caption}</p>}
-              <p className="text-zinc-400 text-sm mt-1">♥ {previewSign.like_count} · {new Date(previewSign.created_at).toLocaleDateString('ko-KR')}</p>
+              <div className="flex items-center justify-center gap-3 mt-1">
+                <button onClick={() => void handleAdjustLike(previewSign, -1)} className="w-7 h-7 rounded-full bg-zinc-700 text-white font-bold text-sm active:scale-90">−</button>
+                <span className="text-zinc-400 text-sm">♥ {previewSign.like_count}</span>
+                <button onClick={() => void handleAdjustLike(previewSign, +1)} className="w-7 h-7 rounded-full bg-zinc-700 text-white font-bold text-sm active:scale-90">+</button>
+              </div>
+              <p className="text-zinc-500 text-xs mt-1">{new Date(previewSign.created_at).toLocaleDateString('ko-KR')}</p>
             </div>
             <div className="border-t border-zinc-700 pt-3">
               <p className="text-zinc-400 text-xs mb-2">한줄평 {previewComments.length}개</p>
@@ -395,7 +423,7 @@ export default function AdminContent() {
       )}
 
       {activeTab === 'signs' && loading ? (
-        <div className="flex items-center justify-center py-20 text-3xl animate-pulse">🪧</div>
+        <div className="flex items-center justify-center py-20 text-3xl animate-pulse">🍀</div>
       ) : activeTab === 'signs' && (
         <div className="grid grid-cols-2 gap-2">
           {signs.map(sign => (

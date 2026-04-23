@@ -60,7 +60,7 @@ export default function ExploreContent() {
       .map(s => {
         const daysSince = (now - new Date(s.created_at).getTime()) / (1000 * 60 * 60 * 24)
         const recencyBonus = Math.max(0, 7 - daysSince) * 3
-        return { s, score: s.like_count + s.comment_count * 2 + recencyBonus + Math.random() * 5 }
+        return { s, score: s.like_count + s.comment_count * 2 + recencyBonus + Math.random() * 10 }
       })
       .sort((a, b) => b.score - a.score)
       .map(({ s }) => s)
@@ -134,19 +134,19 @@ export default function ExploreContent() {
           <div className="flex items-center justify-center py-20 text-sm text-zinc-500">잠시만 기다려 주세요…</div>
         ) : leftCol.length === 0 && rightCol.length === 0 ? (
           <div className="flex flex-col items-center py-16 gap-3 text-zinc-600">
-            <span className="text-4xl">🪧</span>
+            <span className="text-4xl">🍀</span>
             <p className="text-sm">간판이 없어요</p>
           </div>
         ) : (
           <>
-            <div className="flex gap-0.5 animate-fade-in-up">
-              <div className="flex-1 flex flex-col gap-0.5">
+            <div className="flex gap-[3.5px] animate-fade-in-up">
+              <div className="flex-1 flex flex-col gap-[3.5px]">
                 {leftCol.map(sign => (
                   <SignTile key={sign.id} sign={sign}
                     onOpen={() => setViewerIndex(allSigns.findIndex(s => s.id === sign.id))} />
                 ))}
               </div>
-              <div className="flex-1 flex flex-col gap-0.5">
+              <div className="flex-1 flex flex-col gap-[3.5px]">
                 {rightCol.map(sign => (
                   <SignTile key={sign.id} sign={sign}
                     onOpen={() => setViewerIndex(allSigns.findIndex(s => s.id === sign.id))} />
@@ -174,11 +174,6 @@ function SignTile({ sign, onOpen }: { sign: Sign; onOpen: () => void }) {
     <div className="relative overflow-hidden cursor-pointer border border-black bg-gray-100" onClick={onOpen}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-auto block" />
-      {sign.caption && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-          <p className="text-xs text-white font-bold truncate">{sign.caption}</p>
-        </div>
-      )}
     </div>
   )
 }
