@@ -63,7 +63,7 @@ export default function SwipeFeed() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-dvh text-3xl animate-pulse">🪧</div>
+    return <div className="flex items-center justify-center min-h-dvh text-3xl animate-pulse">🍀</div>
   }
 
   if (done || signs.length === 0) {
@@ -78,7 +78,7 @@ export default function SwipeFeed() {
   }
 
   if (!current) {
-    return <div className="flex items-center justify-center min-h-dvh text-3xl animate-pulse">🪧</div>
+    return <div className="flex items-center justify-center min-h-dvh text-3xl animate-pulse">🍀</div>
   }
 
   return (

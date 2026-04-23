@@ -62,11 +62,16 @@ export default function AdminContent() {
     e.preventDefault()
     setAuthLoading(true)
     setAuthError('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { setAuthError(error.message); setAuthLoading(false); return }
-    setLoggedIn(true)
-    loadSigns()
-    setAuthLoading(false)
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) { setAuthError(error.message); return }
+      setLoggedIn(true)
+      void loadSigns()
+    } catch {
+      setAuthError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.')
+    } finally {
+      setAuthLoading(false)
+    }
   }
 
   async function loadSigns() {
@@ -356,7 +361,7 @@ export default function AdminContent() {
       )}
 
       {activeTab === 'signs' && loading ? (
-        <div className="flex items-center justify-center py-20 text-3xl animate-pulse">🪧</div>
+        <div className="flex items-center justify-center py-20 text-3xl animate-pulse">🍀</div>
       ) : activeTab === 'signs' && (
         <div className="grid grid-cols-2 gap-2">
           {signs.map(sign => (

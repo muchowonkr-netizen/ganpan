@@ -24,7 +24,7 @@ export default function LoginContent() {
   return (
     <div className="flex flex-col justify-center min-h-dvh px-6 gap-8">
       <div className="text-center">
-        <div className="text-5xl mb-2">🪧</div>
+        <div className="text-5xl mb-2">🍀</div>
         <h1 className="text-2xl font-black">관리자 로그인</h1>
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
