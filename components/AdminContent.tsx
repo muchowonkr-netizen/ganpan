@@ -23,9 +23,10 @@ export default function AdminContent() {
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null)
   const [newComment, setNewComment] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
-  const [activeTab, setActiveTab] = useState<'signs' | 'comments'>('signs')
+  const [activeTab, setActiveTab] = useState<'signs' | 'comments' | 'likes'>('signs')
   const [allComments, setAllComments] = useState<(Comment & { signs: { image_url: string; caption: string | null } | null })[]>([])
   const [commentsLoading, setCommentsLoading] = useState(false)
+  const [likeActivity, setLikeActivity] = useState<{ sign_id: string; image_url: string; like_count: number; time: Date }[]>([])
   const bulkRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export default function AdminContent() {
     }
 
     const channel = supabase
-      .channel('new-signs')
+      .channel('admin-monitor')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signs' }, payload => {
         const sign = payload.new as { caption?: string }
         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
@@ -52,6 +53,14 @@ export default function AdminContent() {
           })
         }
         void loadSigns()
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'signs' }, payload => {
+        const sign = payload.new as Sign
+        setLikeActivity(prev => [{ sign_id: sign.id, image_url: sign.image_url, like_count: sign.like_count, time: new Date() }, ...prev].slice(0, 100))
+        setSigns(prev => prev.map(s => s.id === sign.id ? { ...s, like_count: sign.like_count } : s))
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          new Notification('♥ 좋아요!', { body: `♥ ${sign.like_count}`, icon: '/icon-192.png' })
+        }
       })
       .subscribe()
 
@@ -228,6 +237,12 @@ export default function AdminContent() {
         >
           한줄평 {allComments.length > 0 && `(${allComments.length})`}
         </button>
+        <button
+          onClick={() => setActiveTab('likes')}
+          className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${activeTab === 'likes' ? 'bg-zinc-600 text-white' : 'text-zinc-400'}`}
+        >
+          좋아요 {likeActivity.length > 0 && `(${likeActivity.length})`}
+        </button>
       </div>
 
       {/* 한줄평 탭 */}
@@ -260,6 +275,30 @@ export default function AdminContent() {
                 >
                   {deletingCommentId === c.id ? '...' : '삭제'}
                 </button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* 좋아요 탭 */}
+      {activeTab === 'likes' && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-zinc-400">실시간 · {likeActivity.length}건</span>
+            <button onClick={() => setLikeActivity([])} className="text-xs text-zinc-500 px-2 py-1 bg-zinc-800 rounded-lg">초기화</button>
+          </div>
+          {likeActivity.length === 0 ? (
+            <div className="flex items-center justify-center py-16 text-zinc-500 text-sm">좋아요 활동이 없어요</div>
+          ) : (
+            likeActivity.map((a, i) => (
+              <div key={i} className="flex gap-3 bg-zinc-800 rounded-xl p-3 items-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={a.image_url} alt="" className="w-14 h-14 object-cover rounded-lg flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white font-bold">♥ {a.like_count}</p>
+                  <p className="text-[10px] text-zinc-500 mt-1">{a.time.toLocaleString('ko-KR')}</p>
+                </div>
               </div>
             ))
           )}
