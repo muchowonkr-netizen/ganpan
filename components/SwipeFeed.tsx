@@ -90,7 +90,7 @@ export default function SwipeFeed() {
           className="w-12 h-12 bg-white text-black text-xl flex items-center justify-center font-bold border border-black active:scale-95 transition-transform"
           aria-label="인기간판"
         >
-          🔍
+          📸
         </Link>
       </header>
 
