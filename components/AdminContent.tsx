@@ -31,6 +31,11 @@ export default function AdminContent() {
   const [likeHistory, setLikeHistory] = useState<{ id: string; sign_id: string; user_id: string | null; created_at: string; signs: { image_url: string; caption: string | null } | null }[]>([])
   const [likesLoading, setLikesLoading] = useState(false)
   const bulkRef = useRef<HTMLInputElement>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [editingTitle, setEditingTitle] = useState('')
+  const filteredSigns = searchQuery.trim()
+    ? signs.filter(s => s.caption?.toLowerCase().includes(searchQuery.toLowerCase()))
+    : signs
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -126,8 +131,8 @@ export default function AdminContent() {
   }
 
   function toggleSelectAll() {
-    if (selected.size === signs.length) setSelected(new Set())
-    else setSelected(new Set(signs.map(s => s.id)))
+    if (selected.size === filteredSigns.length) setSelected(new Set())
+    else setSelected(new Set(filteredSigns.map(s => s.id)))
   }
 
   async function handleBulkUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -152,6 +157,7 @@ export default function AdminContent() {
 
   async function openPreview(sign: Sign) {
     setPreviewSign(sign)
+    setEditingTitle(sign.caption ?? '')
     setNewComment('')
     const { data } = await supabase.from('comments').select('*').eq('sign_id', sign.id).order('created_at', { ascending: true })
     setPreviewComments((data as Comment[]) ?? [])
@@ -196,6 +202,14 @@ export default function AdminContent() {
       .limit(200)
     setLikeHistory((data ?? []) as typeof likeHistory)
     setLikesLoading(false)
+  }
+
+  async function handleSaveTitle(sign: Sign, title: string) {
+    const trimmed = title.trim() || null
+    const { error } = await supabase.from('signs').update({ caption: trimmed }).eq('id', sign.id)
+    if (error) { alert('저장 실패: ' + error.message); return }
+    setSigns(prev => prev.map(s => s.id === sign.id ? { ...s, caption: trimmed } : s))
+    setPreviewSign(prev => prev?.id === sign.id ? { ...prev, caption: trimmed } : prev)
   }
 
   async function handleAdjustLike(sign: Sign, delta: number) {
@@ -377,7 +391,13 @@ export default function AdminContent() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={previewSign.image_url} alt={previewSign.caption ?? ''} className="w-full object-contain max-h-64" />
             <div className="text-center">
-              {previewSign.caption && <p className="text-white font-bold">{previewSign.caption}</p>}
+              <input
+                value={editingTitle}
+                onChange={e => setEditingTitle(e.target.value)}
+                onBlur={() => { if (editingTitle !== (previewSign.caption ?? '')) void handleSaveTitle(previewSign, editingTitle) }}
+                placeholder="제목 없음"
+                className="text-white font-bold bg-transparent text-center w-full focus:outline-none border-b border-zinc-600 pb-1 placeholder-zinc-600"
+              />
               <div className="flex items-center justify-center gap-3 mt-1">
                 <button onClick={() => void handleAdjustLike(previewSign, -1)} className="w-7 h-7 rounded-full bg-zinc-700 text-white font-bold text-sm active:scale-90">−</button>
                 <span className="text-zinc-400 text-sm">♥ {previewSign.like_count}</span>
@@ -422,11 +442,28 @@ export default function AdminContent() {
         </div>
       )}
 
+      {activeTab === 'signs' && (
+        <div className="relative mb-3">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="제목으로 검색..."
+            className="w-full px-4 py-2.5 rounded-xl bg-zinc-800 text-white text-sm placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-lg leading-none">✕</button>
+          )}
+        </div>
+      )}
+      {activeTab === 'signs' && searchQuery.trim() && (
+        <p className="text-xs text-zinc-500 mb-2">검색 결과 {filteredSigns.length}개</p>
+      )}
       {activeTab === 'signs' && loading ? (
         <div className="flex items-center justify-center py-20 text-3xl animate-pulse">🍀</div>
       ) : activeTab === 'signs' && (
         <div className="grid grid-cols-2 gap-2">
-          {signs.map(sign => (
+          {filteredSigns.map(sign => (
             <div key={sign.id}
               onClick={selectMode ? () => toggleSelect(sign.id) : () => { void openPreview(sign) }}
               className={`relative rounded-2xl overflow-hidden aspect-square bg-zinc-900 cursor-pointer`}>
