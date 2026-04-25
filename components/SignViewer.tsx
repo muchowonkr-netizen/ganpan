@@ -93,12 +93,11 @@ function ViewCard({ sign, onClick }: { sign: Sign; onClick?: (e: React.MouseEven
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sign.image_url} aria-hidden alt="" className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-80" draggable={false} />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={sign.image_url} alt={sign.caption ?? '간판'} className="absolute inset-0 w-full h-full object-contain" draggable={false} />
+      <img src={sign.image_url} alt="간판" className="absolute inset-0 w-full h-full object-contain" draggable={false} />
 
-      {sign.caption && (
+      {sign.location_name && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-5">
-          <p className="font-bold text-lg leading-snug">{sign.caption}</p>
-          {sign.location_name && <p className="text-sm text-zinc-300 mt-1">📍 {sign.location_name}</p>}
+          <p className="text-sm text-zinc-300">📍 {sign.location_name}</p>
         </div>
       )}
     </div>

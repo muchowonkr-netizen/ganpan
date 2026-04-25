@@ -173,7 +173,7 @@ function SignTile({ sign, onOpen }: { sign: Sign; onOpen: () => void }) {
   return (
     <div className="relative overflow-hidden cursor-pointer border border-black bg-gray-100" onClick={onOpen}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={sign.image_url} alt={sign.caption ?? ''} className="w-full h-auto block" />
+      <img src={sign.image_url} alt="" className="w-full h-auto block" />
     </div>
   )
 }
