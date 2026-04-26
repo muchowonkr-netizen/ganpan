@@ -33,7 +33,6 @@ export default function AdminContent() {
   const bulkRef = useRef<HTMLInputElement>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [editingTitle, setEditingTitle] = useState('')
-  const [ocrProgress, setOcrProgress] = useState<{ done: number; total: number } | null>(null)
   const filteredSigns = searchQuery.trim()
     ? signs.filter(s => s.caption?.toLowerCase().includes(searchQuery.toLowerCase()))
     : signs
@@ -205,36 +204,6 @@ export default function AdminContent() {
     setLikesLoading(false)
   }
 
-  async function handleOcr() {
-    setOcrProgress({ done: 0, total: 0 })
-    try {
-      const res = await fetch('/api/ocr-signs', { method: 'POST' })
-      if (!res.body) return
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const text = decoder.decode(value)
-        for (const line of text.split('\n')) {
-          if (!line.startsWith('data: ')) continue
-          const data = JSON.parse(line.slice(6)) as { done?: number; total?: number; complete?: boolean }
-          if (data.complete) {
-            setOcrProgress(null)
-            void loadSigns()
-            return
-          }
-          if (data.done !== undefined && data.total !== undefined) {
-            setOcrProgress({ done: data.done, total: data.total })
-          }
-        }
-      }
-    } finally {
-      setOcrProgress(null)
-      void loadSigns()
-    }
-  }
-
   async function handleSaveTitle(sign: Sign, title: string) {
     const trimmed = title.trim() || null
     const { error } = await supabase.from('signs').update({ caption: trimmed }).eq('id', sign.id)
@@ -376,17 +345,9 @@ export default function AdminContent() {
       {/* 업로드 */}
       {activeTab === 'signs' && (
         <div className="flex gap-2 mb-2">
-          <button onClick={() => bulkRef.current?.click()} disabled={bulkProgress !== null || ocrProgress !== null}
+          <button onClick={() => bulkRef.current?.click()} disabled={bulkProgress !== null}
             className="flex-1 py-3 rounded-xl bg-zinc-800 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
             {bulkProgress ? `업로드 중... ${bulkProgress.done} / ${bulkProgress.total}` : '📁 사진 여러 장 올리기'}
-          </button>
-          <button onClick={() => void handleOcr()} disabled={ocrProgress !== null || bulkProgress !== null}
-            className="px-4 py-3 rounded-xl bg-zinc-700 text-white font-bold text-sm disabled:opacity-50 whitespace-nowrap">
-            {ocrProgress
-              ? ocrProgress.total === 0
-                ? '분석 중...'
-                : `${ocrProgress.done}/${ocrProgress.total}`
-              : '🔍 텍스트 자동 추출'}
           </button>
         </div>
       )}
@@ -394,11 +355,6 @@ export default function AdminContent() {
       {activeTab === 'signs' && bulkProgress && (
         <div className="w-full bg-zinc-800 rounded-full h-2 mb-3">
           <div className="bg-yellow-400 h-2 rounded-full transition-all" style={{ width: `${(bulkProgress.done / bulkProgress.total) * 100}%` }} />
-        </div>
-      )}
-      {activeTab === 'signs' && ocrProgress && ocrProgress.total > 0 && (
-        <div className="w-full bg-zinc-800 rounded-full h-2 mb-3">
-          <div className="bg-blue-400 h-2 rounded-full transition-all" style={{ width: `${(ocrProgress.done / ocrProgress.total) * 100}%` }} />
         </div>
       )}
 
@@ -443,6 +399,7 @@ export default function AdminContent() {
                 value={editingTitle}
                 onChange={e => setEditingTitle(e.target.value)}
                 onBlur={() => { if (editingTitle !== (previewSign.caption ?? '')) void handleSaveTitle(previewSign, editingTitle) }}
+                onKeyDown={e => { if (e.key === 'Enter') { e.currentTarget.blur() } }}
                 placeholder="제목 없음"
                 className="text-white font-bold bg-transparent text-center w-full focus:outline-none border-b border-zinc-600 pb-1 placeholder-zinc-600"
               />
