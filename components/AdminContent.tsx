@@ -399,7 +399,7 @@ export default function AdminContent() {
                 value={editingTitle}
                 onChange={e => setEditingTitle(e.target.value)}
                 onBlur={() => { if (editingTitle !== (previewSign.caption ?? '')) void handleSaveTitle(previewSign, editingTitle) }}
-                onKeyDown={e => { if (e.key === 'Enter') { e.currentTarget.blur() } }}
+                onKeyDown={e => { if (e.key === 'Enter') { void handleSaveTitle(previewSign, editingTitle); setPreviewSign(null) } }}
                 placeholder="제목 없음"
                 className="text-white font-bold bg-transparent text-center w-full focus:outline-none border-b border-zinc-600 pb-1 placeholder-zinc-600"
               />
