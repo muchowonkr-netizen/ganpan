@@ -59,7 +59,7 @@ export default function ExploreContent() {
     const scored = fetched
       .map(s => {
         const daysSince = (now - new Date(s.created_at).getTime()) / (1000 * 60 * 60 * 24)
-        const recencyBonus = Math.max(0, 7 - daysSince) * 1.05
+        const recencyBonus = daysSince < 1 ? 0 : Math.max(0, 7 - daysSince) * 1.05
         return { s, score: s.like_count + s.comment_count * 2 + recencyBonus + Math.random() * 10 }
       })
       .sort((a, b) => b.score - a.score)
