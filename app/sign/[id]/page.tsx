@@ -76,7 +76,6 @@ export default async function SignPage(
   if (!sign) notFound()
 
   const title = buildTitle(sign)
-  const created = new Date(sign.created_at)
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ImageObject',
@@ -108,9 +107,8 @@ export default async function SignPage(
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <header className="px-4 py-3 border-b border-black/10 flex items-center justify-between">
+      <header className="px-4 py-3 border-b border-black/10">
         <Link href="/" className="text-sm text-gray-700 active:opacity-60">← 모든 간판</Link>
-        <span className="text-xs text-gray-400">{created.toLocaleDateString('ko-KR')}</span>
       </header>
 
       <article className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-4">
@@ -125,28 +123,7 @@ export default async function SignPage(
             loading="eager"
             decoding="async"
           />
-          {(sign.caption || sign.location_name) && (
-            <figcaption className="px-3 py-2 text-sm text-gray-700 border-t border-black/10 bg-white">
-              {sign.caption && <p>{sign.caption}</p>}
-              {sign.location_name && <p className="text-gray-500 mt-1">📍 {sign.location_name}</p>}
-            </figcaption>
-          )}
         </figure>
-
-        <dl className="flex gap-6 text-sm text-gray-700">
-          <div className="flex items-center gap-1.5">
-            <dt aria-label="좋아요">♥</dt>
-            <dd>{sign.like_count.toLocaleString()}</dd>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <dt aria-label="댓글">💬</dt>
-            <dd>{sign.comment_count.toLocaleString()}</dd>
-          </div>
-        </dl>
-
-        <p className="text-xs text-gray-400">
-          이 간판은 <Link href="/" className="underline">{SITE_NAME}</Link>에서 모은 간판 사진 중 하나입니다.
-        </p>
       </article>
     </main>
   )
