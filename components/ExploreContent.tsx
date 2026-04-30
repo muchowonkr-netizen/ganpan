@@ -170,10 +170,11 @@ export default function ExploreContent() {
 }
 
 function SignTile({ sign, onOpen }: { sign: Sign; onOpen: () => void }) {
+  const alt = sign.caption?.trim() || sign.location_name?.trim() || '간판 사진'
   return (
     <div className="relative overflow-hidden cursor-pointer border border-black bg-gray-100" onClick={onOpen}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={sign.image_url} alt="" className="w-full h-auto block" />
+      <img src={sign.image_url} alt={alt} loading="lazy" decoding="async" className="w-full h-auto block" />
     </div>
   )
 }
