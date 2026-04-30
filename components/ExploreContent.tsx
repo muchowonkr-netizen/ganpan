@@ -166,9 +166,18 @@ export default function ExploreContent({ initialSigns = [] }: { initialSigns?: S
 function SignTile({ sign, onOpen }: { sign: Sign; onOpen: () => void }) {
   const alt = sign.caption?.trim() || sign.location_name?.trim() || '간판 사진'
   return (
-    <div className="relative overflow-hidden cursor-pointer border border-black bg-gray-100" onClick={onOpen}>
+    <Link
+      href={`/sign/${sign.id}`}
+      prefetch={false}
+      onClick={e => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return
+        e.preventDefault()
+        onOpen()
+      }}
+      className="relative overflow-hidden block cursor-pointer border border-black bg-gray-100"
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={sign.image_url} alt={alt} loading="lazy" decoding="async" className="w-full h-auto block" />
-    </div>
+    </Link>
   )
 }
