@@ -8,45 +8,41 @@ import SignViewer from './SignViewer'
 import Link from 'next/link'
 
 const BATCH_SIZE = 20
+const FALLBACK_RATIO = 1
 
-function getAspectRatio(url: string): Promise<number> {
-  return new Promise(resolve => {
-    const img = new window.Image()
-    img.onload = () => resolve(img.naturalHeight / img.naturalWidth)
-    img.onerror = () => resolve(1)
-    img.src = url
-  })
-}
-
-async function distributeToColumns(
+function distribute(
   signs: Sign[],
   leftH: number,
   rightH: number
-): Promise<{ left: Sign[]; right: Sign[]; leftH: number; rightH: number }> {
-  const ratios = await Promise.all(signs.map(s => getAspectRatio(s.image_url)))
+): { left: Sign[]; right: Sign[]; leftH: number; rightH: number } {
   const left: Sign[] = []
   const right: Sign[] = []
-  signs.forEach((sign, i) => {
-    if (leftH <= rightH) { left.push(sign); leftH += ratios[i] }
-    else { right.push(sign); rightH += ratios[i] }
-  })
+  for (const sign of signs) {
+    const ratio = sign.aspect_ratio ?? FALLBACK_RATIO
+    if (leftH <= rightH) { left.push(sign); leftH += ratio }
+    else { right.push(sign); rightH += ratio }
+  }
   return { left, right, leftH, rightH }
 }
 
-export default function ExploreContent() {
-  const [allSigns, setAllSigns] = useState<Sign[]>([])
-  const [leftCol, setLeftCol] = useState<Sign[]>([])
-  const [rightCol, setRightCol] = useState<Sign[]>([])
-  const [loading, setLoading] = useState(true)
-  const [allLoaded, setAllLoaded] = useState(false)
+export default function ExploreContent({ initialSigns = [] }: { initialSigns?: Sign[] }) {
+  const initialBatch = initialSigns.slice(0, BATCH_SIZE)
+  const initialDist = distribute(initialBatch, 0, 0)
+  const hasInitial = initialSigns.length > 0
+
+  const [allSigns, setAllSigns] = useState<Sign[]>(initialSigns)
+  const [leftCol, setLeftCol] = useState<Sign[]>(initialDist.left)
+  const [rightCol, setRightCol] = useState<Sign[]>(initialDist.right)
+  const [loading, setLoading] = useState(!hasInitial)
+  const [allLoaded, setAllLoaded] = useState(initialBatch.length >= initialSigns.length)
   const [commentSign, setCommentSign] = useState<string | null>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
 
-  const leftHRef = useRef(0)
-  const rightHRef = useRef(0)
-  const renderedCountRef = useRef(0)
+  const leftHRef = useRef(initialDist.leftH)
+  const rightHRef = useRef(initialDist.rightH)
+  const renderedCountRef = useRef(initialBatch.length)
   const loadingMoreRef = useRef(false)
-  const allSignsRef = useRef<Sign[]>([])
+  const allSignsRef = useRef<Sign[]>(initialSigns)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   async function loadFeed() {
@@ -67,12 +63,8 @@ export default function ExploreContent() {
     allSignsRef.current = scored
     setAllSigns(scored)
 
-    leftHRef.current = 0
-    rightHRef.current = 0
-    renderedCountRef.current = 0
-
     const firstBatch = scored.slice(0, BATCH_SIZE)
-    const { left, right, leftH, rightH } = await distributeToColumns(firstBatch, 0, 0)
+    const { left, right, leftH, rightH } = distribute(firstBatch, 0, 0)
     leftHRef.current = leftH
     rightHRef.current = rightH
     renderedCountRef.current = firstBatch.length
@@ -82,14 +74,14 @@ export default function ExploreContent() {
     setLoading(false)
   }
 
-  async function loadMore() {
+  function loadMore() {
     if (loadingMoreRef.current) return
     const all = allSignsRef.current
     const count = renderedCountRef.current
     if (count >= all.length) return
     loadingMoreRef.current = true
     const batch = all.slice(count, count + BATCH_SIZE)
-    const { left, right, leftH, rightH } = await distributeToColumns(
+    const { left, right, leftH, rightH } = distribute(
       batch, leftHRef.current, rightHRef.current
     )
     leftHRef.current = leftH
@@ -103,13 +95,15 @@ export default function ExploreContent() {
   }
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void loadFeed() }, [])
+  useEffect(() => {
+    if (!hasInitial) void loadFeed()
+  }, [])
 
   useEffect(() => {
     const sentinel = sentinelRef.current
     if (!sentinel || loading) return
     const observer = new IntersectionObserver(
-      entries => { if (entries[0].isIntersecting) void loadMore() },
+      entries => { if (entries[0].isIntersecting) loadMore() },
       { rootMargin: '300px' }
     )
     observer.observe(sentinel)
@@ -170,10 +164,11 @@ export default function ExploreContent() {
 }
 
 function SignTile({ sign, onOpen }: { sign: Sign; onOpen: () => void }) {
+  const alt = sign.caption?.trim() || sign.location_name?.trim() || '간판 사진'
   return (
     <div className="relative overflow-hidden cursor-pointer border border-black bg-gray-100" onClick={onOpen}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={sign.image_url} alt="" className="w-full h-auto block" />
+      <img src={sign.image_url} alt={alt} loading="lazy" decoding="async" className="w-full h-auto block" />
     </div>
   )
 }

@@ -141,12 +141,12 @@ export default function AdminContent() {
     setBulkProgress({ done: 0, total: files.length })
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
-      const compressed = await compressImage(file)
+      const { file: compressed, aspectRatio } = await compressImage(file)
       const path = `signs/admin/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`
       const { error: upErr } = await supabase.storage.from('signs').upload(path, compressed)
       if (!upErr) {
         const { data: { publicUrl } } = supabase.storage.from('signs').getPublicUrl(path)
-        await supabase.from('signs').insert({ image_url: publicUrl })
+        await supabase.from('signs').insert({ image_url: publicUrl, aspect_ratio: aspectRatio })
       }
       setBulkProgress({ done: i + 1, total: files.length })
     }
