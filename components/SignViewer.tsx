@@ -13,10 +13,29 @@ export default function SignViewer({ signs, startIndex, onClose }: {
   const [index, setIndex] = useState(startIndex)
   const [showComments, setShowComments] = useState(false)
   const [previewComment, setPreviewComment] = useState<Comment | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const current = signs[index]
   const onCloseRef = useRef(onClose)
   useEffect(() => { onCloseRef.current = onClose })
+
+  useEffect(() => {
+    if (!copied) return
+    const t = setTimeout(() => setCopied(false), 2500)
+    return () => clearTimeout(t)
+  }, [copied])
+
+  async function handleShare(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!current) return
+    const shareUrl = `${window.location.origin}/sign/${current.id}`
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setCopied(true)
+    } catch {
+      setCopied(false)
+    }
+  }
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -55,8 +74,16 @@ export default function SignViewer({ signs, startIndex, onClose }: {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col" onClick={onClose}>
-      <div className="flex items-center px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-3">
         <button onClick={onClose} className="text-zinc-300 text-2xl w-10 h-10 flex items-center justify-center">✕</button>
+        <button
+          onClick={handleShare}
+          className="text-zinc-300 text-sm h-10 px-3 flex items-center gap-1.5 active:scale-95 transition-transform"
+          aria-label="공유"
+        >
+          <span aria-hidden>↗</span>
+          <span>공유</span>
+        </button>
       </div>
 
       <div className="flex-1 flex flex-col items-center px-4 gap-4 overflow-hidden">
@@ -79,6 +106,17 @@ export default function SignViewer({ signs, startIndex, onClose }: {
 
       {showComments && current && (
         <CommentSheet signId={current.id} onClose={() => setShowComments(false)} readOnly />
+      )}
+
+      {copied && (
+        <div
+          className="fixed bottom-24 left-0 right-0 flex justify-center z-[60] pointer-events-none animate-fade-in"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="bg-white text-black text-sm font-medium px-5 py-3 border border-black shadow-lg whitespace-nowrap">
+            주소가 복사되었습니다…
+          </div>
+        </div>
       )}
     </div>
   )
