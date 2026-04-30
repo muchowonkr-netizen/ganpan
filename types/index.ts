@@ -7,6 +7,7 @@ export type Sign = {
   like_count: number
   super_like_count: number
   comment_count: number
+  aspect_ratio: number | null
   created_at: string
 }
 

@@ -28,7 +28,7 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
     if (!file) return
     setUploading(true)
 
-    const compressed = await compressImage(file)
+    const { file: compressed, aspectRatio } = await compressImage(file)
     const path = `signs/anon/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`
 
     const { error: upErr } = await supabase.storage.from('signs').upload(path, compressed)
@@ -41,6 +41,7 @@ export default function UploadModal({ onClose, onSuccess }: { onClose: () => voi
     const { data: { publicUrl } } = supabase.storage.from('signs').getPublicUrl(path)
     const { data: sign, error: insertErr } = await supabase.from('signs').insert({
       image_url: publicUrl,
+      aspect_ratio: aspectRatio,
     }).select('id').single()
     if (insertErr || !sign) {
       alert('등록 실패: ' + insertErr?.message)

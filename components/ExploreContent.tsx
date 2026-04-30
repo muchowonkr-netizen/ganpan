@@ -8,54 +8,38 @@ import SignViewer from './SignViewer'
 import Link from 'next/link'
 
 const BATCH_SIZE = 20
+const FALLBACK_RATIO = 1
 
-function getAspectRatio(url: string): Promise<number> {
-  return new Promise(resolve => {
-    const img = new window.Image()
-    img.onload = () => resolve(img.naturalHeight / img.naturalWidth)
-    img.onerror = () => resolve(1)
-    img.src = url
-  })
-}
-
-async function distributeToColumns(
+function distribute(
   signs: Sign[],
   leftH: number,
   rightH: number
-): Promise<{ left: Sign[]; right: Sign[]; leftH: number; rightH: number }> {
-  const ratios = await Promise.all(signs.map(s => getAspectRatio(s.image_url)))
+): { left: Sign[]; right: Sign[]; leftH: number; rightH: number } {
   const left: Sign[] = []
   const right: Sign[] = []
-  signs.forEach((sign, i) => {
-    if (leftH <= rightH) { left.push(sign); leftH += ratios[i] }
-    else { right.push(sign); rightH += ratios[i] }
-  })
+  for (const sign of signs) {
+    const ratio = sign.aspect_ratio ?? FALLBACK_RATIO
+    if (leftH <= rightH) { left.push(sign); leftH += ratio }
+    else { right.push(sign); rightH += ratio }
+  }
   return { left, right, leftH, rightH }
-}
-
-// SSR-safe split: deterministic alternation so server and client match.
-function splitAlternating(signs: Sign[]): { left: Sign[]; right: Sign[] } {
-  const left: Sign[] = []
-  const right: Sign[] = []
-  signs.forEach((sign, i) => (i % 2 === 0 ? left : right).push(sign))
-  return { left, right }
 }
 
 export default function ExploreContent({ initialSigns = [] }: { initialSigns?: Sign[] }) {
   const initialBatch = initialSigns.slice(0, BATCH_SIZE)
-  const initialSplit = splitAlternating(initialBatch)
+  const initialDist = distribute(initialBatch, 0, 0)
   const hasInitial = initialSigns.length > 0
 
   const [allSigns, setAllSigns] = useState<Sign[]>(initialSigns)
-  const [leftCol, setLeftCol] = useState<Sign[]>(initialSplit.left)
-  const [rightCol, setRightCol] = useState<Sign[]>(initialSplit.right)
+  const [leftCol, setLeftCol] = useState<Sign[]>(initialDist.left)
+  const [rightCol, setRightCol] = useState<Sign[]>(initialDist.right)
   const [loading, setLoading] = useState(!hasInitial)
   const [allLoaded, setAllLoaded] = useState(initialBatch.length >= initialSigns.length)
   const [commentSign, setCommentSign] = useState<string | null>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
 
-  const leftHRef = useRef(initialSplit.left.length)
-  const rightHRef = useRef(initialSplit.right.length)
+  const leftHRef = useRef(initialDist.leftH)
+  const rightHRef = useRef(initialDist.rightH)
   const renderedCountRef = useRef(initialBatch.length)
   const loadingMoreRef = useRef(false)
   const allSignsRef = useRef<Sign[]>(initialSigns)
@@ -79,12 +63,8 @@ export default function ExploreContent({ initialSigns = [] }: { initialSigns?: S
     allSignsRef.current = scored
     setAllSigns(scored)
 
-    leftHRef.current = 0
-    rightHRef.current = 0
-    renderedCountRef.current = 0
-
     const firstBatch = scored.slice(0, BATCH_SIZE)
-    const { left, right, leftH, rightH } = await distributeToColumns(firstBatch, 0, 0)
+    const { left, right, leftH, rightH } = distribute(firstBatch, 0, 0)
     leftHRef.current = leftH
     rightHRef.current = rightH
     renderedCountRef.current = firstBatch.length
@@ -94,14 +74,14 @@ export default function ExploreContent({ initialSigns = [] }: { initialSigns?: S
     setLoading(false)
   }
 
-  async function loadMore() {
+  function loadMore() {
     if (loadingMoreRef.current) return
     const all = allSignsRef.current
     const count = renderedCountRef.current
     if (count >= all.length) return
     loadingMoreRef.current = true
     const batch = all.slice(count, count + BATCH_SIZE)
-    const { left, right, leftH, rightH } = await distributeToColumns(
+    const { left, right, leftH, rightH } = distribute(
       batch, leftHRef.current, rightHRef.current
     )
     leftHRef.current = leftH
@@ -116,23 +96,14 @@ export default function ExploreContent({ initialSigns = [] }: { initialSigns?: S
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
-    if (!hasInitial) {
-      void loadFeed()
-      return
-    }
-    // Initial batch came from SSR with index-based split. Backfill the real
-    // column heights so subsequent loadMore batches stay balanced.
-    Promise.all(initialSplit.left.map(s => getAspectRatio(s.image_url)))
-      .then(rs => { leftHRef.current = rs.reduce((a, b) => a + b, 0) })
-    Promise.all(initialSplit.right.map(s => getAspectRatio(s.image_url)))
-      .then(rs => { rightHRef.current = rs.reduce((a, b) => a + b, 0) })
+    if (!hasInitial) void loadFeed()
   }, [])
 
   useEffect(() => {
     const sentinel = sentinelRef.current
     if (!sentinel || loading) return
     const observer = new IntersectionObserver(
-      entries => { if (entries[0].isIntersecting) void loadMore() },
+      entries => { if (entries[0].isIntersecting) loadMore() },
       { rootMargin: '300px' }
     )
     observer.observe(sentinel)
