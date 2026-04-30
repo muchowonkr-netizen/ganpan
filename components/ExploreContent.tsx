@@ -33,20 +33,32 @@ async function distributeToColumns(
   return { left, right, leftH, rightH }
 }
 
-export default function ExploreContent() {
-  const [allSigns, setAllSigns] = useState<Sign[]>([])
-  const [leftCol, setLeftCol] = useState<Sign[]>([])
-  const [rightCol, setRightCol] = useState<Sign[]>([])
-  const [loading, setLoading] = useState(true)
-  const [allLoaded, setAllLoaded] = useState(false)
+// SSR-safe split: deterministic alternation so server and client match.
+function splitAlternating(signs: Sign[]): { left: Sign[]; right: Sign[] } {
+  const left: Sign[] = []
+  const right: Sign[] = []
+  signs.forEach((sign, i) => (i % 2 === 0 ? left : right).push(sign))
+  return { left, right }
+}
+
+export default function ExploreContent({ initialSigns = [] }: { initialSigns?: Sign[] }) {
+  const initialBatch = initialSigns.slice(0, BATCH_SIZE)
+  const initialSplit = splitAlternating(initialBatch)
+  const hasInitial = initialSigns.length > 0
+
+  const [allSigns, setAllSigns] = useState<Sign[]>(initialSigns)
+  const [leftCol, setLeftCol] = useState<Sign[]>(initialSplit.left)
+  const [rightCol, setRightCol] = useState<Sign[]>(initialSplit.right)
+  const [loading, setLoading] = useState(!hasInitial)
+  const [allLoaded, setAllLoaded] = useState(initialBatch.length >= initialSigns.length)
   const [commentSign, setCommentSign] = useState<string | null>(null)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
 
-  const leftHRef = useRef(0)
-  const rightHRef = useRef(0)
-  const renderedCountRef = useRef(0)
+  const leftHRef = useRef(initialSplit.left.length)
+  const rightHRef = useRef(initialSplit.right.length)
+  const renderedCountRef = useRef(initialBatch.length)
   const loadingMoreRef = useRef(false)
-  const allSignsRef = useRef<Sign[]>([])
+  const allSignsRef = useRef<Sign[]>(initialSigns)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   async function loadFeed() {
@@ -103,7 +115,18 @@ export default function ExploreContent() {
   }
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void loadFeed() }, [])
+  useEffect(() => {
+    if (!hasInitial) {
+      void loadFeed()
+      return
+    }
+    // Initial batch came from SSR with index-based split. Backfill the real
+    // column heights so subsequent loadMore batches stay balanced.
+    Promise.all(initialSplit.left.map(s => getAspectRatio(s.image_url)))
+      .then(rs => { leftHRef.current = rs.reduce((a, b) => a + b, 0) })
+    Promise.all(initialSplit.right.map(s => getAspectRatio(s.image_url)))
+      .then(rs => { rightHRef.current = rs.reduce((a, b) => a + b, 0) })
+  }, [])
 
   useEffect(() => {
     const sentinel = sentinelRef.current
