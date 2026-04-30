@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const SITE_URL = 'https://ganpanlover.vercel.app'
+const SITE_URL = 'https://ganpanlover.com'
 const OG_IMAGE =
   'https://kfuwqtwiyqubjuvxsdek.supabase.co/storage/v1/object/public/signs/signs/og-image.jpg'
 const SITE_NAME = '간판을 좋아하세요...'
